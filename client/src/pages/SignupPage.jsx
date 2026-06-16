@@ -6,7 +6,9 @@ import { api } from "../api/client";
 function FormField({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-ink/70 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-ink/70 mb-1.5">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -30,7 +32,16 @@ export default function SignupPage() {
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
+    if (form.phone.length !== 10) {
+      alert("Phone number must be 10 digits");
+      return;
+    }
+
+    // save customer
+  };
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -66,17 +77,21 @@ export default function SignupPage() {
           <div className="w-9 h-9 rounded-lg bg-teal-500 flex items-center justify-center font-display font-bold text-indigo-900 text-lg">
             ₹
           </div>
-          <span className="font-display font-semibold text-xl text-white">BillKaro</span>
+          <span className="font-display font-semibold text-xl text-white">
+            BillKaro
+          </span>
         </div>
 
         <div className="bg-canvas rounded-2xl shadow-2xl shadow-black/30 p-7 sm:p-9 relative">
           <div
             className="absolute -top-2 left-0 right-0 h-2 bg-canvas"
             style={{
-              maskImage: "radial-gradient(circle 5px at 12px 0, transparent 5px, black 5.5px)",
+              maskImage:
+                "radial-gradient(circle 5px at 12px 0, transparent 5px, black 5.5px)",
               maskRepeat: "repeat-x",
               maskSize: "24px 10px",
-              WebkitMaskImage: "radial-gradient(circle 5px at 12px 0, transparent 5px, black 5.5px)",
+              WebkitMaskImage:
+                "radial-gradient(circle 5px at 12px 0, transparent 5px, black 5.5px)",
               WebkitMaskRepeat: "repeat-x",
               WebkitMaskSize: "24px 10px",
             }}
@@ -85,7 +100,9 @@ export default function SignupPage() {
           <h1 className="font-display text-2xl font-semibold text-ink text-center mb-1">
             Start billing in minutes
           </h1>
-          <p className="text-sm text-ink/60 text-center mb-7">Create your business account</p>
+          <p className="text-sm text-ink/60 text-center mb-7">
+            Create your business account
+          </p>
 
           {error && (
             <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3.5 py-2.5 mb-4 border border-red-100">
@@ -136,15 +153,35 @@ export default function SignupPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label="Phone">
-                <input className={inputClass} value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+                <input
+                  type="tel"
+                  maxLength={10}
+                  className={inputClass}
+                  value={form.phone}
+                  onChange={(e) =>
+                    update(
+                      "phone",
+                      e.target.value.replace(/\D/g, "").slice(0, 10),
+                    )
+                  }
+                  placeholder="9876543210"
+                />
               </FormField>
               <FormField label="GSTIN">
-                <input className={inputClass} value={form.gstin} onChange={(e) => update("gstin", e.target.value)} />
+                <input
+                  className={inputClass}
+                  value={form.gstin}
+                  onChange={(e) => update("gstin", e.target.value)}
+                />
               </FormField>
             </div>
 
             <FormField label="Address">
-              <input className={inputClass} value={form.address} onChange={(e) => update("address", e.target.value)} />
+              <input
+                className={inputClass}
+                value={form.address}
+                onChange={(e) => update("address", e.target.value)}
+              />
             </FormField>
 
             <button
@@ -158,7 +195,10 @@ export default function SignupPage() {
 
           <p className="text-sm text-ink/60 text-center mt-6">
             Already have an account?{" "}
-            <Link to="/login" className="text-teal-600 font-medium hover:underline">
+            <Link
+              to="/login"
+              className="text-teal-600 font-medium hover:underline"
+            >
               Login
             </Link>
           </p>

@@ -6,7 +6,11 @@ const UserSchema = new mongoose.Schema(
     ownerName: { type: String },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
-    phone: { type: String },
+   phone: {
+  type: String,
+  required: true,
+  match: [/^\d{10}$/, "Mobile number must be exactly 10 digits"]
+},
     gstin: { type: String },
     address: { type: String },
     upiId: { type: String },

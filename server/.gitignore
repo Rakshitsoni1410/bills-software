@@ -56,6 +56,16 @@ exports/
 # Seed backups
 seed-backup/
 
-# Package lock files (optional)
-# package-lock.json
-# yarn.lock
+Package lock files (optional)
+package-lock.json
+ yarn.lock
+const demoSignup = {
+  name: "Rajesh Patel",
+  businessName: "Shree Traders",
+  gstin: "24ABCDE1234F1Z5",
+  phone: "9876543210",
+  email: "demo@billkaro.app",
+  password: "demo1234",
+  address: "Satellite Road",
+  city: "Ahmedabad"
+};
