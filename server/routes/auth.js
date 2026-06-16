@@ -12,20 +12,41 @@ const cookieOptions = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
+// SIGNUP
 router.post("/signup", async (req, res) => {
   try {
-    const { businessName, ownerName, email, password, phone, gstin, address } = req.body;
+    const {
+      businessName,
+      ownerName,
+      email,
+      password,
+      phone,
+      gstin,
+      address,
+    } = req.body;
 
-    if (!businessName || !email || !password) {
-      return res.status(400).json({ error: "Business name, email and password are required" });
+
+    if (!businessName || !email || !phone || !password) {
+      return res.status(400).json({
+        error: "Business name, email, phone and password are required",
+      });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({
+      $or: [
+        { email: email.toLowerCase() },
+        { phone: phone },
+      ],
+    });
+
     if (existing) {
-      return res.status(409).json({ error: "Email already registered" });
+      return res.status(409).json({
+        error: "Email or phone already registered",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await User.create({
       businessName,
       ownerName,
@@ -36,43 +57,69 @@ router.post("/signup", async (req, res) => {
       address,
     });
 
-    const token = signToken({ userId: user._id.toString(), email: user.email });
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+    });
+
     res.cookie("token", token, cookieOptions);
 
     res.status(201).json({
-      user: { id: user._id, businessName: user.businessName, email: user.email },
+      user: {
+        id: user._id,
+        businessName: user.businessName,
+        email: user.email,
+        phone: user.phone,
+      },
     });
+
+
   } catch (err) {
     console.error("Signup error:", err);
-    res.status(500).json({ error: "Server error during signup" });
+    res.status(500).json({
+      error: "Server error during signup",
+    });
   }
 });
 
+// LOGIN WITH EMAIL OR MOBILE
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+    const { login, password } = req.body;
+
+
+    if (!login || !password) {
+      return res.status(400).json({
+        error: "Email/Mobile and password are required",
+      });
     }
 
-    const user = await User.findOne(
-      {
-        $or: [
-          { email: login },
-          { phone: login }
-        ]
-      }
-    );
+    const user = await User.findOne({
+      $or: [
+        { email: login.toLowerCase() },
+        { phone: login },
+      ],
+    });
+
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({
+        error: "Invalid email/mobile or password",
+      });
     }
 
     const valid = await bcrypt.compare(password, user.password);
+
     if (!valid) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({
+        error: "Invalid email/mobile or password",
+      });
     }
 
-    const token = signToken({ userId: user._id.toString(), email: user.email });
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+    });
+
     res.cookie("token", token, cookieOptions);
 
     res.json({
@@ -80,28 +127,39 @@ router.post("/login", async (req, res) => {
         id: user._id,
         businessName: user.businessName,
         email: user.email,
-        gstin: user.gstin,
         phone: user.phone,
+        gstin: user.gstin,
         address: user.address,
         upiId: user.upiId,
       },
     });
+
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ error: "Server error during login" });
+    res.status(500).json({
+      error: "Server error during login",
+    });
   }
 });
 
+// LOGOUT
 router.post("/logout", (req, res) => {
   res.clearCookie("token", cookieOptions);
   res.json({ success: true });
 });
 
+// CURRENT USER
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
-    if (!user) return res.status(401).json({ user: null });
+
+
+    if (!user) {
+      return res.status(401).json({ user: null });
+    }
+
     res.json({ user });
+
   } catch (err) {
     res.status(500).json({ user: null });
   }

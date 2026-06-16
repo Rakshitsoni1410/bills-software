@@ -8,8 +8,8 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
    phone: {
   type: String,
-  required: true,
-  match: [/^\d{10}$/, "Mobile number must be exactly 10 digits"]
+  unique: true,
+  sparse: true,
 },
     gstin: { type: String },
     address: { type: String },

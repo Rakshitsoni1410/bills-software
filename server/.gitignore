@@ -63,7 +63,7 @@ const demoSignup = {
   name: "Rajesh Patel",
   businessName: "Shree Traders",
   gstin: "24ABCDE1234F1Z5",
-  phone: "9876543210",
+  phone: "9999999999",
   email: "demo@billkaro.app",
   password: "demo1234",
   address: "Satellite Road",

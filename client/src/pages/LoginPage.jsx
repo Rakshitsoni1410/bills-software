@@ -13,25 +13,25 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    await api.post("/auth/login", {
-      login: form.login,
-      password: form.password,
-    });
+    try {
+      await api.post("/auth/login", {
+        login: form.login,
+        password: form.password,
+      });
 
-    await refreshUser();
-    navigate("/dashboard");
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
+      await refreshUser();
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   return (
     <div className="min-h-screen bg-indigo-900 relative overflow-hidden flex items-center justify-center px-4 py-10">
@@ -98,12 +98,19 @@ async function handleSubmit(e) {
                 placeholder="Enter email or mobile number"
                 className="w-full text-sm border border-ink/15 rounded-xl px-3.5 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition"
                 value={form.login}
-                onChange={(e) =>
+                onChange={(e) => {
+                  let value = e.target.value;
+
+                  // If user is typing only digits, treat as mobile
+                  if (/^\d*$/.test(value)) {
+                    value = value.slice(0, 10);
+                  }
+
                   setForm({
                     ...form,
-                    login: e.target.value,
-                  })
-                }
+                    login: value,
+                  });
+                }}
               />
             </div>
             <div>

@@ -2,6 +2,8 @@ const express = require("express");
 const Invoice = require("../models/Invoice");
 const Khata = require("../models/Khata");
 const Customer = require("../models/Customer");
+const Counter = require("../models/Counter");
+const User = require("../models/User");
 const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -23,6 +25,40 @@ function calcTotals(items) {
     sgst: Math.round(sgst * 100) / 100,
     total: Math.round((subtotal + cgst + sgst) * 100) / 100,
   };
+}
+
+// Strips spaces/punctuation and uppercases the business name so
+// "Shree Traders" becomes "SHREETRADERS" for use in invoice numbers.
+function slugifyBusinessName(name) {
+  const cleaned = (name || "BUSINESS").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return cleaned || "BUSINESS";
+}
+
+function todayKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}${mm}${dd}`;
+}
+
+// Atomically increments a per-business, per-day counter and returns the
+// next invoice number, e.g. "SHREETRADERS-20260616-001". Using
+// findOneAndUpdate with $inc and upsert means concurrent requests never
+// collide on the same sequence number, even under load.
+async function generateInvoiceNo(userId, businessName) {
+  const dateKey = todayKey();
+  const counterKey = `${userId}:${dateKey}`;
+
+  const counter = await Counter.findOneAndUpdate(
+    { key: counterKey },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true }
+  );
+
+  const seqStr = String(counter.seq).padStart(3, "0");
+  const slug = slugifyBusinessName(businessName);
+  return `${slug}-${dateKey}-${seqStr}`;
 }
 
 router.get("/", async (req, res) => {
@@ -47,6 +83,9 @@ router.post("/", async (req, res) => {
   }
 
   const totals = calcTotals(body.items);
+
+  const user = await User.findById(req.user.userId).select("businessName");
+  const invoiceNo = await generateInvoiceNo(req.user.userId, user?.businessName);
 
   // Auto-save new customers typed manually so they appear in the customer
   // database next time, avoiding duplicate data entry.
@@ -74,7 +113,7 @@ router.post("/", async (req, res) => {
     customerPhone: body.customerPhone,
     customerGstin: body.customerGstin,
     customerAddress: body.customerAddress,
-    invoiceNo: body.invoiceNo,
+    invoiceNo,
     docType: body.docType || "Tax Invoice",
     date: body.date,
     dueDate: body.dueDate,
