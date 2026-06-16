@@ -4,11 +4,22 @@ import InvoicePrint from "../components/InvoicePrint";
 import Field from "../components/Field";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../api/client";
-
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 const GST_RATES = [0, 5, 12, 18, 28];
 const STATES = [
-  "Gujarat", "Maharashtra", "Delhi", "Karnataka", "Tamil Nadu", "Rajasthan",
-  "Uttar Pradesh", "West Bengal", "Telangana", "Madhya Pradesh", "Punjab", "Haryana",
+  "Gujarat",
+  "Maharashtra",
+  "Delhi",
+  "Karnataka",
+  "Tamil Nadu",
+  "Rajasthan",
+  "Uttar Pradesh",
+  "West Bengal",
+  "Telangana",
+  "Madhya Pradesh",
+  "Punjab",
+  "Haryana",
 ];
 
 function emptyItem() {
@@ -25,7 +36,6 @@ export default function BillingPage() {
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
-    invoiceNo: "INV-001",
     docType: "Tax Invoice",
     date: new Date().toISOString().split("T")[0],
     dueDate: "",
@@ -81,7 +91,9 @@ export default function BillingPage() {
   }
 
   function updateItem(id, field, value) {
-    setItems((it) => it.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+    setItems((it) =>
+      it.map((i) => (i.id === id ? { ...i, [field]: value } : i)),
+    );
   }
 
   function calcTotals() {
@@ -113,21 +125,64 @@ export default function BillingPage() {
     try {
       const data = await api.post("/invoices", { ...form, items });
       setSavedInvoice(data.invoice);
+
+      setTimeout(() => {
+        downloadInvoicePdf(data.invoice.invoiceNo);
+      }, 1000);
     } catch (err) {
       alert(err.message || "Could not save invoice");
     } finally {
       setSaving(false);
     }
   }
+  async function downloadInvoicePdf(invoiceNo) {
+    const element = document.getElementById("invoice-preview");
 
+    if (!element) {
+      console.error("invoice-preview not found");
+      return;
+    }
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = 210;
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    pdf.save(`${invoiceNo}.pdf`);
+  }
   function whatsappShare() {
-    const msg = `*${user?.businessName || "Business"}*\n*Invoice ${form.invoiceNo}*\n\nDear ${
-      form.customerName || "Customer"
-    },\n\nYour bill details:\n${items
-      .map((i) => `• ${i.desc}: ₹${(i.qty * i.rate).toFixed(2)}`)
-      .join("\n")}\n\nSubtotal: ₹${totals.subtotal.toFixed(2)}\nGST: ₹${(
-      totals.cgst + totals.sgst
-    ).toFixed(2)}\n*Total: ₹${totals.total.toFixed(2)}*\n\nThank you for your business!`;
+    const invoiceNumber = savedInvoice?.invoiceNo || "Draft";
+
+    const msg = `*${user?.businessName || "Business"}*
+*Invoice ${invoiceNumber}*
+
+Dear ${form.customerName || "Customer"},
+
+Your bill details:
+
+${items
+  .map(
+    (i) =>
+      `• ${i.desc} (${i.qty} × ₹${i.rate}) = ₹${(i.qty * i.rate).toFixed(2)}`,
+  )
+  .join("\n")}
+
+Subtotal: ₹${totals.subtotal.toFixed(2)}
+GST: ₹${(totals.cgst + totals.sgst).toFixed(2)}
+
+*Total: ₹${totals.total.toFixed(2)}*
+
+Thank you for your business!`;
+
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
@@ -160,7 +215,10 @@ export default function BillingPage() {
             View all invoices
           </button>
         </div>
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div
+          id="invoice-preview"
+          className="border border-slate-100 rounded-3xl overflow-hidden shadow-xl"
+        >
           <InvoicePrint invoice={savedInvoice} business={user} />
         </div>
       </div>
@@ -172,20 +230,29 @@ export default function BillingPage() {
       <h1 className="text-lg font-semibold mb-4">Create new bill</h1>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 mb-4">
-        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">Invoice details</h2>
+        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">
+          Invoice details
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Document type">
-            <select className="input" value={form.docType} onChange={(e) => update("docType", e.target.value)}>
+            <select
+              className="input"
+              value={form.docType}
+              onChange={(e) => update("docType", e.target.value)}
+            >
               <option>Tax Invoice</option>
               <option>Quotation</option>
               <option>Proforma Invoice</option>
             </select>
           </Field>
-          <Field label="Invoice number">
-            <input className="input" value={form.invoiceNo} onChange={(e) => update("invoiceNo", e.target.value)} />
-          </Field>
+
           <Field label="Date">
-            <input type="date" className="input" value={form.date} onChange={(e) => update("date", e.target.value)} />
+            <input
+              type="date"
+              className="input"
+              value={form.date}
+              onChange={(e) => update("date", e.target.value)}
+            />
           </Field>
           <Field label="Due date">
             <input
@@ -207,7 +274,11 @@ export default function BillingPage() {
             </select>
           </Field>
           <Field label="Status">
-            <select className="input" value={form.status} onChange={(e) => update("status", e.target.value)}>
+            <select
+              className="input"
+              value={form.status}
+              onChange={(e) => update("status", e.target.value)}
+            >
               <option value="paid">Paid</option>
               <option value="udhaar">Udhaar (credit)</option>
               <option value="partial">Partial payment</option>
@@ -217,10 +288,16 @@ export default function BillingPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 mb-4">
-        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">Customer</h2>
+        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">
+          Customer
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Select saved customer">
-            <select className="input" value={form.customerId} onChange={(e) => selectCustomer(e.target.value)}>
+            <select
+              className="input"
+              value={form.customerId}
+              onChange={(e) => selectCustomer(e.target.value)}
+            >
               <option value="">-- or enter manually below --</option>
               {customers.map((c) => (
                 <option key={c._id} value={c._id}>
@@ -264,7 +341,9 @@ export default function BillingPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 mb-4">
-        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">Items</h2>
+        <h2 className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-3">
+          Items
+        </h2>
 
         <div className="hidden sm:grid grid-cols-[3fr_1fr_1fr_1fr_32px] gap-2 text-xs text-gray-500 mb-1 px-1">
           <span>Description</span>
@@ -276,7 +355,10 @@ export default function BillingPage() {
 
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-2 sm:grid-cols-[3fr_1fr_1fr_1fr_32px] gap-2 items-center">
+            <div
+              key={item.id}
+              className="grid grid-cols-2 sm:grid-cols-[3fr_1fr_1fr_1fr_32px] gap-2 items-center"
+            >
               <input
                 className="input col-span-2 sm:col-span-1"
                 placeholder="Product / service name"
@@ -288,19 +370,25 @@ export default function BillingPage() {
                 min="1"
                 className="input"
                 value={item.qty}
-                onChange={(e) => updateItem(item.id, "qty", Number(e.target.value))}
+                onChange={(e) =>
+                  updateItem(item.id, "qty", Number(e.target.value))
+                }
               />
               <input
                 type="number"
                 min="0"
                 className="input"
                 value={item.rate}
-                onChange={(e) => updateItem(item.id, "rate", Number(e.target.value))}
+                onChange={(e) =>
+                  updateItem(item.id, "rate", Number(e.target.value))
+                }
               />
               <select
                 className="input"
                 value={item.gst}
-                onChange={(e) => updateItem(item.id, "gst", Number(e.target.value))}
+                onChange={(e) =>
+                  updateItem(item.id, "gst", Number(e.target.value))
+                }
               >
                 {GST_RATES.map((r) => (
                   <option key={r} value={r}>
@@ -319,7 +407,10 @@ export default function BillingPage() {
           ))}
         </div>
 
-        <button onClick={addItem} className="mt-3 text-sm border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50">
+        <button
+          onClick={addItem}
+          className="mt-3 text-sm border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50"
+        >
           + Add item
         </button>
       </div>
