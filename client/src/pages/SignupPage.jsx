@@ -32,26 +32,28 @@ export default function SignupPage() {
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
-  const handleSubmit = (e) => {
+  
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    if (form.phone.length !== 10) {
-      alert("Phone number must be 10 digits");
+    setError("");
+
+    // Phone validation
+    if (form.phone && form.phone.length !== 10) {
+      setError("Phone number must be exactly 10 digits");
       return;
     }
 
-    // save customer
-  };
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
     setLoading(true);
+
     try {
       await api.post("/auth/signup", form);
+
       await refreshUser();
+
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || "Signup failed");
     } finally {
       setLoading(false);
     }

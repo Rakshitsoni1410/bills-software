@@ -1,8 +1,8 @@
 const styles = {
-  paid: "bg-green-50 text-green-700",
-  udhaar: "bg-red-50 text-red-700",
-  partial: "bg-gray-100 text-gray-600",
-  received: "bg-green-50 text-green-700",
+  paid: "bg-emerald-100 text-emerald-700",
+  udhaar: "bg-red-100 text-red-700",
+  partial: "bg-amber-100 text-amber-700",
+  received: "bg-teal-100 text-teal-700",
 };
 
 const labels = {
@@ -14,7 +14,18 @@ const labels = {
 
 export default function Badge({ status }) {
   return (
-    <span className={`inline-block text-xs px-2.5 py-1 rounded-full ${styles[status] || styles.partial}`}>
+    <span
+      className={`
+        inline-flex
+        items-center
+        px-3
+        py-1
+        rounded-full
+        text-xs
+        font-semibold
+        ${styles[status] || styles.partial}
+      `}
+    >
       {labels[status] || status}
     </span>
   );
