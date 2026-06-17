@@ -88,7 +88,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // LOGIN WITH EMAIL OR MOBILE
-router.post("api/login", async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { login, password } = req.body;
 
