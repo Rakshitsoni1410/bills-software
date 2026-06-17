@@ -1,223 +1,69 @@
-# Bills -software
+# Bills software — GST Billing Software for Indian Business
 
-GST Billing, Invoice, Khata, Customer & Inventory Management Software for Indian Businesses.
+BillKaro is a full-stack GST billing and invoicing platform built for Indian small businesses, retailers, and traders. It replaces manual khata books and spreadsheet billing with auto-generated GST-compliant invoices, customer management, and udhaar (credit) tracking — all in one place.
 
-## Overview
-
-BillKaro is a modern full-stack web application designed for Indian shop owners, traders, wholesalers, retailers, and small businesses.
-
-It helps businesses:
-
-* Create GST invoices
-* Manage customers
-* Track udhaar (Khata)
-* Monitor inventory
-* Generate reports
-* Manage business operations from a single dashboard
-
----
+**Live demo:** https://bills-software.netlify.app
+**Repository:** https://github.com/Rakshitsoni1410/bills-software
 
 ## Features
 
-### Dashboard
+- **GST invoice generator** — create Tax Invoices, Quotations, or Proforma Invoices with automatic CGST/SGST calculation across multiple tax slabs (0%, 5%, 12%, 18%, 28%)
+- **Auto-generated invoice numbers** — invoices are numbered automatically per business per day in the format `BUSINESSNAME-YYYYMMDD-001`, with an atomic counter that guarantees no duplicate numbers even under concurrent requests
+- **Customer database** — save customer details once and reuse them across invoices; new customers are saved automatically when typed manually
+- **Khata / Udhaar ledger** — track credit given to customers and payments received, with udhaar entries auto-created when an invoice is marked as credit
+- **Dashboard analytics** — total sales, GST collected, pending udhaar, and a breakdown of revenue by GST rate
+- **WhatsApp bill sharing** — generate a formatted bill summary and share it directly via WhatsApp
+- **Print / PDF export** — print-ready invoice layout with amount-in-words conversion (Indian numbering: lakhs, crores)
+- **Authentication** — secure signup/login with JWT stored in an httpOnly cookie, scoped per business account
 
-* Revenue Overview
-* Sales Analytics
-* Pending Payments
-* Customer Statistics
-* GST Summary
+## Tech stack
 
-### Customer Management
+**Frontend:** React (Vite), React Router, Tailwind CSS
+**Backend:** Node.js, Express
+**Database:** MongoDB with Mongoose
+**Auth:** JWT in httpOnly cookies, bcrypt password hashing
+**Deployment:** Netlify (frontend), Render (backend), MongoDB Atlas (database)
 
-* Add/Edit/Delete Customers
-* GSTIN Support
-* Customer Ledger
-* Customer Statements
+## Project structure
 
-### GST Billing
-
-* Create GST Invoices
-* Print Invoices
-* PDF Export
-* Invoice History
-* Payment Status Tracking
-
-### Khata (Udhaar)
-
-* Credit Entries
-* Payment Entries
-* Outstanding Balances
-* Customer-wise Ledger
-
-### Inventory
-
-* Product Management
-* Stock Tracking
-* Low Stock Alerts
-* GST & HSN Support
-
-### Reports
-
-* Sales Reports
-* Customer Reports
-* GST Reports
-* Export Data
-
----
-
-## Tech Stack
-
-### Frontend
-
-* React
-* Vite
-* Tailwind CSS
-* React Router
-* Axios
-
-### Backend
-
-* Node.js
-* Express.js
-* MongoDB
-* Mongoose
-* JWT Authentication
-* bcryptjs
-
----
-
-## Project Structure
-
-```text
-billkaro/
-│
-├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── layouts/
-│   │   ├── services/
-│   │   └── context/
-│   │
-│   ├── public/
-│   └── package.json
-│
-├── server/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   ├── seed/
-│   ├── config/
-│   └── package.json
-│
-└── README.md
+```
+bills-software/
+├── client/                 React + Vite frontend
+│   └── src/
+│       ├── api/             fetch wrapper for backend calls
+│       ├── context/         auth state (AuthContext)
+│       ├── components/      shared UI (Navbar, Badge, InvoicePrint, etc.)
+│       └── pages/           Dashboard, Billing, Customers, Khata, Invoices, Login, Signup
+└── server/                 Express + MongoDB backend
+    ├── models/              User, Customer, Invoice, Khata, Counter
+    ├── middleware/           JWT auth guard
+    └── routes/              auth, customers, invoices, khata, dashboard
 ```
 
----
+## Running locally
 
-## Installation
-
-### Clone Repository
-
-```bash
-git clone https://github.com/yourusername/billkaro.git
-cd billkaro
-```
-
-### Install Frontend
-
-```bash
-cd client
-npm install
-```
-
-### Install Backend
-
-```bash
-cd ../server
-npm install
-```
-
----
-
-## Environment Variables
-
-Create a `.env` file inside the server folder:
-
-```env
-PORT=5000
-
-MONGODB_URI=your_mongodb_connection_string
-
-JWT_SECRET=your_secret_key
-```
-
----
-
-## Run Development Server
-
-### Backend
-
+**Backend:**
 ```bash
 cd server
+npm install
+cp .env.example .env   # add your MongoDB URI and a JWT secret
 npm run dev
 ```
 
-### Frontend
-
+**Frontend:**
 ```bash
 cd client
+npm install
+cp .env.example .env.local   # set VITE_API_URL to your local backend
 npm run dev
 ```
 
----
+The backend runs on `localhost:5000`, the frontend on `localhost:5173`.
 
-## Seed Demo Data
+## Deployment notes
 
-```bash
-cd server
-npm run seed
-```
+The frontend and backend are deployed on separate domains (Netlify and Render), which requires cross-site cookie handling: in production, auth cookies use `sameSite: "none"` with `secure: true`, and CORS is restricted to the configured `CLIENT_URL`. See `server/server.js` for the exact configuration.
 
-Demo Login:
+## Author
 
-```text
-Email: demo@billkaro.app
-Password: demo1234
-```
-
----
-
-## Future Features
-
-* WhatsApp Invoice Sharing
-* Barcode Scanner
-* POS Billing
-* Multi-User Roles
-* Expense Tracking
-* E-Way Bill Support
-* GST Return Assistance
-* Mobile Application
-
----
-
-## Target Users
-
-* Retail Shops
-* Grocery Stores
-* Electronics Stores
-* Traders
-* Wholesalers
-* Service Businesses
-* Small & Medium Enterprises
-
----
-
-## License
-
-MIT License
-
----
-
-Made with ❤️ for Indian Businesses.
+Built by [Rakshit Soni](https://github.com/Rakshitsoni1410).
