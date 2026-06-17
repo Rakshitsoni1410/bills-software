@@ -5,11 +5,16 @@ const { signToken, requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
+// In production, the frontend (Netlify) and backend (Render) are on
+// different domains, so the auth cookie must use sameSite: "none" with
+// secure: true or browsers will silently block it cross-site. In local
+// dev (same-origin via proxy or localhost ports) "lax" works fine.
+const isProduction = process.env.NODE_ENV === "production";
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: 30 * 24 * 60 * 60 * 1000,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  maxAge: 30 * 60 * 60 * 24 * 30,
 };
 
 // SIGNUP
