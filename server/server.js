@@ -20,18 +20,21 @@ app.set("trust proxy", 1);
 
 // CLIENT_URL can be a single URL or a comma-separated list (useful for
 // supporting both a Netlify preview URL and a custom domain at once).
+// Trailing slashes are stripped so "https://x.com/" and "https://x.com"
+// both match - browsers send Origin without a trailing slash.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
-  .map((url) => url.trim());
+  .map((url) => url.trim().replace(/\/$/, ""));
 
 app.use(
   cors({
     origin: function (origin, callback) {
       // Allow requests with no origin (curl, server-to-server health checks)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        console.warn(`CORS blocked request from origin: ${origin}`);
+        callback(null, false);
       }
     },
     credentials: true,
@@ -47,6 +50,13 @@ app.use("/api/khata", khataRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+// Catches any unhandled errors (including CORS rejections) so they return
+// a clean JSON response instead of Express's default 500 HTML error page.
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ error: "Server error" });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`BillKaro server running on port ${PORT}`));
