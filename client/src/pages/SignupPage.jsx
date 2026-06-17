@@ -80,7 +80,7 @@ export default function SignupPage() {
             ₹
           </div>
           <span className="font-display font-semibold text-xl text-white">
-            BillKaro
+            Bills software
           </span>
         </div>
 

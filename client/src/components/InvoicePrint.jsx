@@ -187,7 +187,7 @@ export default function InvoicePrint({ invoice, business }) {
         </div>
 
         <div className="text-[10px] text-gray-400 mt-2">
-          Generated using BillKaro Billing Software
+          Generated using Bills-software Billing Software
         </div>
 
         <div className="text-[10px] text-gray-400">

@@ -1,6 +1,6 @@
 # Bills software — GST Billing Software for Indian Business
 
-BillKaro is a full-stack GST billing and invoicing platform built for Indian small businesses, retailers, and traders. It replaces manual khata books and spreadsheet billing with auto-generated GST-compliant invoices, customer management, and udhaar (credit) tracking — all in one place.
+Bills software is a full-stack GST billing and invoicing platform built for Indian small businesses, retailers, and traders. It replaces manual khata books and spreadsheet billing with auto-generated GST-compliant invoices, customer management, and udhaar (credit) tracking — all in one place.
 
 **Live demo:** https://bills-software.netlify.app
 **Repository:** https://github.com/Rakshitsoni1410/bills-software
