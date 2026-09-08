@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Field from "../components/Field";
 import { api } from "../api/client";
@@ -16,6 +15,8 @@ import {
   Loader2,
   Inbox,
   Plus,
+  X,
+  TriangleAlert,
 } from "lucide-react";
 
 export default function CustomersPage() {
@@ -32,6 +33,10 @@ export default function CustomersPage() {
   });
 
   const [saving, setSaving] = useState(false);
+
+  // Delete confirmation
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -81,30 +86,52 @@ export default function CustomersPage() {
 
       loadCustomers();
     } catch (err) {
-      toast.error(err.message || "Failed to add customer");
+      toast.error(err?.message || "Failed to add customer");
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("Delete this customer?")) return;
+  // Opens custom confirmation modal
+  function handleDelete(customer) {
+    setCustomerToDelete(customer);
+  }
+
+  // Deletes only after user confirms
+  async function confirmDelete() {
+    if (!customerToDelete) return;
+
+    setDeleting(true);
 
     try {
-      await api.delete(`/customers/${id}`);
+      await api.delete(`/customers/${customerToDelete._id}`);
 
-      setCustomers((c) => c.filter((cust) => cust._id !== id));
+      setCustomers((current) =>
+        current.filter(
+          (customer) => customer._id !== customerToDelete._id,
+        ),
+      );
 
-      toast.success("Customer deleted");
+      toast.success("Customer deleted successfully");
+
+      setCustomerToDelete(null);
     } catch (err) {
-      toast.error("Failed to delete customer");
+      toast.error(err?.message || "Failed to delete customer");
+    } finally {
+      setDeleting(false);
     }
   }
 
+  function closeDeleteModal() {
+    if (deleting) return;
+
+    setCustomerToDelete(null);
+  }
+
   const filtered = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.phone || "").includes(search),
+    (customer) =>
+      customer.name.toLowerCase().includes(search.toLowerCase()) ||
+      (customer.phone || "").includes(search),
   );
 
   const inputClass =
@@ -112,7 +139,147 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-7">
-      {/* Header */}
+      {/* =====================================================
+          DELETE CONFIRMATION MODAL
+      ====================================================== */}
+
+      {customerToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-6">
+          {/* Backdrop */}
+          <button
+            type="button"
+            aria-label="Close delete confirmation"
+            onClick={closeDeleteModal}
+            className="absolute inset-0 cursor-default bg-slate-950/55 backdrop-blur-sm"
+          />
+
+          {/* Modal */}
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/20 bg-white shadow-2xl shadow-black/30">
+            {/* Red Top Accent */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-rose-500 to-orange-400" />
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                  <TriangleAlert size={23} />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Delete customer?
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Please confirm before removing this customer.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={closeDeleteModal}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Close confirmation"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Customer Preview */}
+            <div className="mx-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-cyan-100 text-sm font-bold text-indigo-700">
+                  {customerToDelete.name
+                    ?.slice(0, 2)
+                    .toUpperCase()}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-slate-900">
+                    {customerToDelete.name}
+                  </p>
+
+                  {customerToDelete.phone && (
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Phone size={12} />
+                      {customerToDelete.phone}
+                    </div>
+                  )}
+
+                  {customerToDelete.city && (
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+                      <MapPin size={12} />
+                      {customerToDelete.city}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="mx-6 mt-4 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3.5">
+              <TriangleAlert
+                size={17}
+                className="mt-0.5 shrink-0 text-red-500"
+              />
+
+              <div>
+                <p className="text-xs font-semibold text-red-700">
+                  This action cannot be undone
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-red-600/80">
+                  The customer will be permanently removed from your
+                  customer database.
+                </p>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={closeDeleteModal}
+                className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDelete}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2
+                      size={17}
+                      className="animate-spin"
+                    />
+
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={17} />
+
+                    Yes, Delete Customer
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
+
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-cyan-500 px-6 py-7 text-white shadow-xl shadow-indigo-500/10 sm:px-8">
         <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
@@ -152,9 +319,12 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Add Customer */}
+      {/* =====================================================
+          ADD CUSTOMER
+      ====================================================== */}
+
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        {/* Card Header */}
+        {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-5 sm:px-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <UserPlus size={20} />
@@ -186,7 +356,9 @@ export default function CustomersPage() {
                   className={inputClass}
                   placeholder="Customer name"
                   value={form.name}
-                  onChange={(e) => update("name", e.target.value)}
+                  onChange={(e) =>
+                    update("name", e.target.value)
+                  }
                 />
               </div>
             </Field>
@@ -201,10 +373,19 @@ export default function CustomersPage() {
 
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   className={inputClass}
                   placeholder="9876543210"
                   value={form.phone}
-                  onChange={(e) => update("phone", e.target.value)}
+                  onChange={(e) =>
+                    update(
+                      "phone",
+                      e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 10),
+                    )
+                  }
                 />
               </div>
             </Field>
@@ -221,7 +402,12 @@ export default function CustomersPage() {
                   className={`${inputClass} uppercase`}
                   placeholder="GSTIN"
                   value={form.gstin}
-                  onChange={(e) => update("gstin", e.target.value)}
+                  onChange={(e) =>
+                    update(
+                      "gstin",
+                      e.target.value.toUpperCase(),
+                    )
+                  }
                 />
               </div>
             </Field>
@@ -238,7 +424,9 @@ export default function CustomersPage() {
                   className={inputClass}
                   placeholder="Ahmedabad"
                   value={form.city}
-                  onChange={(e) => update("city", e.target.value)}
+                  onChange={(e) =>
+                    update("city", e.target.value)
+                  }
                 />
               </div>
             </Field>
@@ -257,7 +445,9 @@ export default function CustomersPage() {
                     className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
                     placeholder="Customer address"
                     value={form.address}
-                    onChange={(e) => update("address", e.target.value)}
+                    onChange={(e) =>
+                      update("address", e.target.value)
+                    }
                   />
                 </div>
               </Field>
@@ -274,7 +464,11 @@ export default function CustomersPage() {
             >
               {saving ? (
                 <>
-                  <Loader2 size={17} className="animate-spin" />
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
+                  />
+
                   Adding Customer...
                 </>
               ) : (
@@ -283,6 +477,7 @@ export default function CustomersPage() {
                     size={17}
                     className="transition-transform group-hover:rotate-90"
                   />
+
                   Add Customer
                 </>
               )}
@@ -291,7 +486,10 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Customer Database */}
+      {/* =====================================================
+          CUSTOMER DATABASE
+      ====================================================== */}
+
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         {/* Database Header */}
         <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
@@ -323,7 +521,9 @@ export default function CustomersPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100"
               placeholder="Search by name or phone..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
             />
           </div>
         </div>
@@ -331,7 +531,10 @@ export default function CustomersPage() {
         {/* Loading */}
         {loading ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
-            <Loader2 size={32} className="animate-spin text-indigo-600" />
+            <Loader2
+              size={32}
+              className="animate-spin text-indigo-600"
+            />
 
             <p className="mt-4 text-sm font-semibold text-slate-700">
               Loading customers...
@@ -349,7 +552,9 @@ export default function CustomersPage() {
             </div>
 
             <h3 className="mt-5 text-base font-semibold text-slate-800">
-              {search ? "No matching customers" : "No customers yet"}
+              {search
+                ? "No matching customers"
+                : "No customers yet"}
             </h3>
 
             <p className="mt-1 max-w-sm text-sm leading-6 text-slate-500">
@@ -360,7 +565,10 @@ export default function CustomersPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
+            {/* =================================================
+                DESKTOP TABLE
+            ================================================== */}
+
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full">
                 <thead>
@@ -401,7 +609,9 @@ export default function CustomersPage() {
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-cyan-100 text-sm font-bold text-indigo-700">
-                            {customer.name.slice(0, 2).toUpperCase()}
+                            {customer.name
+                              .slice(0, 2)
+                              .toUpperCase()}
                           </div>
 
                           <div>
@@ -420,12 +630,17 @@ export default function CustomersPage() {
                       <td className="px-6 py-5">
                         {customer.phone ? (
                           <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <Phone size={14} className="text-slate-400" />
+                            <Phone
+                              size={14}
+                              className="text-slate-400"
+                            />
 
                             {customer.phone}
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-300">—</span>
+                          <span className="text-sm text-slate-300">
+                            —
+                          </span>
                         )}
                       </td>
 
@@ -433,23 +648,30 @@ export default function CustomersPage() {
                       <td className="px-6 py-5">
                         {customer.city ? (
                           <div className="flex items-center gap-2 text-sm text-slate-600">
-                            <MapPin size={14} className="text-slate-400" />
+                            <MapPin
+                              size={14}
+                              className="text-slate-400"
+                            />
 
                             {customer.city}
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-300">—</span>
+                          <span className="text-sm text-slate-300">
+                            —
+                          </span>
                         )}
                       </td>
 
-                      {/* GST */}
+                      {/* GSTIN */}
                       <td className="px-6 py-5">
                         {customer.gstin ? (
                           <span className="inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600">
                             {customer.gstin}
                           </span>
                         ) : (
-                          <span className="text-sm text-slate-300">—</span>
+                          <span className="text-sm text-slate-300">
+                            —
+                          </span>
                         )}
                       </td>
 
@@ -464,9 +686,12 @@ export default function CustomersPage() {
                       <td className="px-6 py-5 text-right">
                         <button
                           type="button"
-                          onClick={() => handleDelete(customer._id)}
+                          onClick={() =>
+                            handleDelete(customer)
+                          }
                           className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 transition-all hover:border-red-200 hover:bg-red-100 hover:text-red-600"
                           title="Delete customer"
+                          aria-label={`Delete ${customer.name}`}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -477,15 +702,23 @@ export default function CustomersPage() {
               </table>
             </div>
 
-            {/* Mobile Cards */}
+            {/* =================================================
+                MOBILE CARDS
+            ================================================== */}
+
             <div className="divide-y divide-slate-100 md:hidden">
               {filtered.map((customer) => (
-                <div key={customer._id} className="p-4">
+                <div
+                  key={customer._id}
+                  className="p-4"
+                >
                   {/* Top */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-100 to-cyan-100 text-sm font-bold text-indigo-700">
-                        {customer.name.slice(0, 2).toUpperCase()}
+                        {customer.name
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </div>
 
                       <div className="min-w-0">
@@ -496,6 +729,7 @@ export default function CustomersPage() {
                         {customer.city && (
                           <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                             <MapPin size={12} />
+
                             {customer.city}
                           </div>
                         )}
@@ -504,15 +738,17 @@ export default function CustomersPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleDelete(customer._id)}
+                      onClick={() =>
+                        handleDelete(customer)
+                      }
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-500 transition hover:bg-red-100"
-                      aria-label="Delete customer"
+                      aria-label={`Delete ${customer.name}`}
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
 
-                  {/* Customer Details */}
+                  {/* Details */}
                   <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-slate-50 p-4">
                     {customer.phone && (
                       <div className="flex items-center gap-3">
@@ -535,7 +771,9 @@ export default function CustomersPage() {
                     {customer.gstin && (
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm">
-                          <BadgeIndianRupee size={14} />
+                          <BadgeIndianRupee
+                            size={14}
+                          />
                         </div>
 
                         <div className="min-w-0">

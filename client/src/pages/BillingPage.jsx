@@ -31,6 +31,8 @@ import {
   Trash2,
   UserRound,
   Wallet,
+  AlertCircle,
+  X,
 } from "lucide-react";
 
 const GST_RATES = [0, 5, 12, 18, 28];
@@ -68,6 +70,7 @@ export default function BillingPage() {
   const [items, setItems] = useState([emptyItem()]);
   const [savedInvoice, setSavedInvoice] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const [form, setForm] = useState({
     docType: "Tax Invoice",
@@ -103,6 +106,10 @@ export default function BillingPage() {
       ...f,
       [field]: value,
     }));
+
+    if (message) {
+      setMessage(null);
+    }
   }
 
   function selectCustomer(id) {
@@ -144,6 +151,10 @@ export default function BillingPage() {
           : i,
       ),
     );
+
+    if (message) {
+      setMessage(null);
+    }
   }
 
   function calcTotals() {
@@ -170,13 +181,25 @@ export default function BillingPage() {
   const totals = calcTotals();
 
   async function handleSave() {
-    if (!items.length || items.every((i) => !i.desc)) {
-      alert("Please add at least one item with a description.");
+    setMessage(null);
+
+    if (!items.length || items.every((i) => !i.desc.trim())) {
+      setMessage({
+        type: "error",
+        text: "Please add at least one item with a description.",
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    if (!form.customerName) {
-      alert("Please enter a customer name.");
+    if (!form.customerName.trim()) {
+      setMessage({
+        type: "error",
+        text: "Please enter a customer name before generating the invoice.",
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -188,13 +211,19 @@ export default function BillingPage() {
         items,
       });
 
+      setMessage(null);
       setSavedInvoice(data.invoice);
 
       setTimeout(() => {
         downloadInvoicePdf(data.invoice.invoiceNo);
       }, 1000);
     } catch (err) {
-      alert(err.message || "Could not save invoice");
+      setMessage({
+        type: "error",
+        text: err?.message || "Could not generate the invoice. Please try again.",
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
@@ -371,6 +400,49 @@ Thank you for your business!`;
 
   return (
     <div className="space-y-7">
+      {message && (
+        <div
+          className={`flex items-start justify-between gap-4 rounded-2xl border px-4 py-4 shadow-sm ${
+            message.type === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                message.type === "error" ? "bg-red-100" : "bg-emerald-100"
+              }`}
+            >
+              {message.type === "error" ? (
+                <AlertCircle size={19} />
+              ) : (
+                <CheckCircle2 size={19} />
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-bold">
+                {message.type === "error"
+                  ? "Please check your invoice"
+                  : "Success"}
+              </p>
+
+              <p className="mt-1 text-sm opacity-80">{message.text}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            className="rounded-lg p-1.5 transition hover:bg-black/5"
+            aria-label="Close message"
+          >
+            <X size={17} />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-cyan-500 px-6 py-7 text-white shadow-xl shadow-indigo-500/10 sm:px-8">
         <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
