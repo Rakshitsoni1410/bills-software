@@ -1,12 +1,12 @@
 import {
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   Users,
   FileText,
 } from "lucide-react";
 
 const icons = {
-  sales: DollarSign,
+  sales: IndianRupee,      // ← was DollarSign, now IndianRupee
   revenue: TrendingUp,
   customers: Users,
   invoices: FileText,
@@ -26,7 +26,7 @@ export default function MetricCard({
   color = "text-slate-900",
   type = "sales",
 }) {
-  const Icon = icons[type] || DollarSign;
+  const Icon = icons[type] || IndianRupee;
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-6">
