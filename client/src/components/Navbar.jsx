@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import InstallButton from "./InstallButton";
 import {
   LayoutDashboard,
   FilePlus2,
@@ -161,7 +162,7 @@ export default function Navbar() {
                 </Link>
               );
             })}
-
+          <InstallButton />
             <button
               onClick={logout}
               className="mt-3 flex w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600"
