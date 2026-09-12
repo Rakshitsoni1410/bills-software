@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import { useAuth } from "./context/AuthContext";
+import { setLogoutHandler } from "./api/client"; // ✅ import
 import AuthGuard from "./components/AuthGuard";
 import SplashScreen from "./components/SplashScreen";
 
@@ -30,16 +31,22 @@ function RootRedirect() {
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const { logout } = useAuth(); // ✅ get logout from context
+
+  // ✅ Wire api client → AuthContext logout
+  // Now any 401 from any API call anywhere in the app
+  // will automatically call logout() with the error message
+  useEffect(() => {
+    setLogoutHandler((message) => logout(message));
+  }, [logout]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 5000); // Change to 10000 for 10 seconds
-
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Show splash screen first
   if (showSplash) {
     return <SplashScreen />;
   }
@@ -57,70 +64,24 @@ export default function App() {
             borderRadius: "16px",
           },
           success: {
-            iconTheme: {
-              primary: "#14b8a6",
-              secondary: "#ffffff",
-            },
+            iconTheme: { primary: "#14b8a6", secondary: "#ffffff" },
           },
           error: {
-            iconTheme: {
-              primary: "#dc2626",
-              secondary: "#ffffff",
-            },
+            iconTheme: { primary: "#dc2626", secondary: "#ffffff" },
           },
         }}
       />
 
       <Routes>
-        <Route path="/" element={<RootRedirect />} />
+        <Route path="/"        element={<RootRedirect />} />
+        <Route path="/login"   element={<LoginPage />} />
+        <Route path="/signup"  element={<SignupPage />} />
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-
-        <Route
-          path="/dashboard"
-          element={
-            <AuthGuard>
-              <DashboardPage />
-            </AuthGuard>
-          }
-        />
-
-        <Route
-          path="/billing"
-          element={
-            <AuthGuard>
-              <BillingPage />
-            </AuthGuard>
-          }
-        />
-
-        <Route
-          path="/customers"
-          element={
-            <AuthGuard>
-              <CustomersPage />
-            </AuthGuard>
-          }
-        />
-
-        <Route
-          path="/khata"
-          element={
-            <AuthGuard>
-              <KhataPage />
-            </AuthGuard>
-          }
-        />
-
-        <Route
-          path="/invoices"
-          element={
-            <AuthGuard>
-              <InvoicesPage />
-            </AuthGuard>
-          }
-        />
+        <Route path="/dashboard" element={<AuthGuard><DashboardPage /></AuthGuard>} />
+        <Route path="/billing"   element={<AuthGuard><BillingPage /></AuthGuard>} />
+        <Route path="/customers" element={<AuthGuard><CustomersPage /></AuthGuard>} />
+        <Route path="/khata"     element={<AuthGuard><KhataPage /></AuthGuard>} />
+        <Route path="/invoices"  element={<AuthGuard><InvoicesPage /></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
