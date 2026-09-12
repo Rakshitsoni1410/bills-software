@@ -11,14 +11,21 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
-    gstin:   { type: String },
-    address: { type: String },
-    upiId:   { type: String },
-
-    // ✅ Single-session security — replaced on every new login
+    gstin:        { type: String },
+    address:      { type: String },
+    upiId:        { type: String },
     sessionToken: { type: String, default: null },
+
+    // ✅ Brute force protection
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil:           { type: Date,   default: null },
   },
   { timestamps: true }
 );
+
+// ✅ Virtual — true if account is currently locked
+UserSchema.virtual("isLocked").get(function () {
+  return this.lockUntil && this.lockUntil > Date.now();
+});
 
 module.exports = mongoose.model("User", UserSchema);
