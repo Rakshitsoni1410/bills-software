@@ -118,11 +118,11 @@ export default function Navbar() {
                   to={link.href}
                   onClick={() => setOpen(false)}
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 transition
-                    ${
-                      pathname === link.href
-                        ? "bg-indigo-600 text-white"
-                        : "hover:bg-slate-100 text-slate-700"
-                    }`}
+            ${
+              pathname === link.href
+                ? "bg-indigo-600 text-white"
+                : "hover:bg-slate-100 text-slate-700"
+            }`}
                 >
                   <Icon size={20} />
                   {link.label}
@@ -130,10 +130,8 @@ export default function Navbar() {
               );
             })}
 
-            {/* ✅ Install button — mobile, full width */}
-            <div className="px-0 pt-1">
-              <InstallButton fullWidth />
-            </div>
+            {/* ✅ THIS must be here — outside map, before logout */}
+            <InstallButton fullWidth />
 
             <button
               onClick={logout}
