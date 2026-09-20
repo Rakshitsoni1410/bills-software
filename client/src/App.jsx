@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import { useAuth } from "./context/AuthContext";
 import { setLogoutHandler } from "./api/client";
 
-import AuthGuard from "./components/AuthGuard";
 import SplashScreen from "./components/SplashScreen";
 
 import LoginPage from "./pages/LoginPage";
@@ -31,15 +34,24 @@ function RootRedirect() {
     );
   }
 
-  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+  return (
+    <Navigate
+      to={user ? "/dashboard" : "/login"}
+      replace
+    />
+  );
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] =
+    useState(true);
+
   const { logout } = useAuth();
 
   useEffect(() => {
-    setLogoutHandler((message) => logout(message));
+    setLogoutHandler((message) =>
+      logout(message),
+    );
   }, [logout]);
 
   useEffect(() => {
@@ -60,18 +72,22 @@ export default function App() {
         position="top-right"
         toastOptions={{
           duration: 3000,
+
           style: {
             background: "#ffffff",
             color: "#0f172a",
-            border: "1px solid #e2e8f0",
+            border:
+              "1px solid #e2e8f0",
             borderRadius: "16px",
           },
+
           success: {
             iconTheme: {
               primary: "#14b8a6",
               secondary: "#ffffff",
             },
           },
+
           error: {
             iconTheme: {
               primary: "#dc2626",
@@ -82,94 +98,75 @@ export default function App() {
       />
 
       <Routes>
-        <Route path="/" element={<RootRedirect />} />
+        <Route
+          path="/"
+          element={<RootRedirect />}
+        />
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
+
+        <Route
+          path="/signup"
+          element={<SignupPage />}
+        />
 
         <Route
           path="/dashboard"
-          element={
-            <AuthGuard>
-              <DashboardPage />
-            </AuthGuard>
-          }
+          element={<DashboardPage />}
         />
 
         <Route
           path="/billing"
-          element={
-            <AuthGuard>
-              <BillingPage />
-            </AuthGuard>
-          }
+          element={<BillingPage />}
         />
 
         <Route
           path="/customers"
-          element={
-            <AuthGuard>
-              <CustomersPage />
-            </AuthGuard>
-          }
+          element={<CustomersPage />}
         />
 
-        {/* Protected customer profile route */}
         <Route
           path="/customers/:id"
-          element={
-            <AuthGuard>
-              <CustomerDetailsPage />
-            </AuthGuard>
-          }
+          element={<CustomerDetailsPage />}
         />
 
         <Route
           path="/khata"
-          element={
-            <AuthGuard>
-              <KhataPage />
-            </AuthGuard>
-          }
+          element={<KhataPage />}
         />
 
         <Route
           path="/invoices"
-          element={
-            <AuthGuard>
-              <InvoicesPage />
-            </AuthGuard>
-          }
+          element={<InvoicesPage />}
         />
 
         <Route
           path="/invoices/:id"
-          element={
-            <AuthGuard>
-              <InvoiceDetailsPage />
-            </AuthGuard>
-          }
+          element={<InvoiceDetailsPage />}
         />
 
         <Route
           path="/invoices/:id/edit"
-          element={
-            <AuthGuard>
-              <EditInvoicePage />
-            </AuthGuard>
-          }
+          element={<EditInvoicePage />}
         />
 
         <Route
           path="/settings"
-          element={
-            <AuthGuard>
-              <SettingsPage />
-            </AuthGuard>
-          }
+          element={<SettingsPage />}
         />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
       </Routes>
     </>
   );
