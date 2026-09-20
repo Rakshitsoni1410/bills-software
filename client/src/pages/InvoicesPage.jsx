@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Badge from "../components/Badge";
 import { api } from "../api/client";
 import { toast } from "react-hot-toast";
+
 import {
   FileText,
   Search,
@@ -11,6 +14,8 @@ import {
   IndianRupee,
   Loader2,
   Inbox,
+  Eye,
+  ChevronRight,
 } from "lucide-react";
 
 const TABS = [
@@ -21,6 +26,8 @@ const TABS = [
 ];
 
 export default function InvoicesPage() {
+  const navigate = useNavigate();
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -43,11 +50,17 @@ export default function InvoicesPage() {
       .catch(() => {
         toast.error("Failed to load invoices");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
+  }
+
+  function viewInvoice(id) {
+    navigate(`/invoices/${id}`);
   }
 
   const filteredInvoices = invoices.filter((inv) => {
-    const term = search.toLowerCase();
+    const term = search.trim().toLowerCase();
 
     return (
       inv.invoiceNo?.toLowerCase().includes(term) ||
@@ -58,33 +71,43 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
-            <ReceiptText size={25} />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-cyan-500 px-6 py-7 text-white shadow-xl shadow-indigo-500/10 sm:px-8">
+        <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+
+        <div className="absolute -bottom-24 left-16 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur">
+              <ReceiptText size={27} />
+            </div>
+
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-100">
+                Billing Records
+              </p>
+
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                Invoices
+              </h1>
+
+              <p className="mt-2 text-sm text-indigo-100">
+                View and manage all generated invoices.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Invoices
-            </h1>
+          {!loading && (
+            <div className="flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 backdrop-blur">
+              <FileText size={17} />
 
-            <p className="mt-1 text-sm text-slate-500">
-              View and manage all generated invoices
-            </p>
-          </div>
+              <span className="text-sm font-semibold">
+                {invoices.length} invoice
+                {invoices.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
         </div>
-
-        {!loading && (
-          <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-            <FileText size={16} className="text-indigo-500" />
-
-            <span className="text-sm font-medium text-slate-600">
-              {invoices.length} invoice
-              {invoices.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Main Card */}
@@ -188,6 +211,10 @@ export default function InvoicesPage() {
                     <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
                       Status
                     </th>
+
+                    <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Action
+                    </th>
                   </tr>
                 </thead>
 
@@ -197,6 +224,7 @@ export default function InvoicesPage() {
                       key={inv._id}
                       className="transition-colors hover:bg-slate-50/80"
                     >
+                      {/* Invoice */}
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -209,18 +237,20 @@ export default function InvoicesPage() {
                             </p>
 
                             <p className="mt-0.5 text-xs text-slate-400">
-                              Invoice
+                              {inv.docType || "Invoice"}
                             </p>
                           </div>
                         </div>
                       </td>
 
+                      {/* Customer */}
                       <td className="px-6 py-5">
                         <p className="text-sm font-medium text-slate-700">
                           {inv.customerName}
                         </p>
                       </td>
 
+                      {/* Date */}
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <CalendarDays size={15} className="text-slate-400" />
@@ -229,6 +259,7 @@ export default function InvoicesPage() {
                         </div>
                       </td>
 
+                      {/* Items */}
                       <td className="px-6 py-5 text-center">
                         <div className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
                           <Package size={13} />
@@ -237,6 +268,7 @@ export default function InvoicesPage() {
                         </div>
                       </td>
 
+                      {/* Amount */}
                       <td className="px-6 py-5 text-right">
                         <div className="inline-flex items-center justify-end font-bold text-slate-900">
                           <IndianRupee size={15} />
@@ -248,8 +280,21 @@ export default function InvoicesPage() {
                         </div>
                       </td>
 
+                      {/* Status */}
                       <td className="px-6 py-5 text-right">
                         <Badge status={inv.status} />
+                      </td>
+
+                      {/* Action */}
+                      <td className="px-6 py-5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => viewInvoice(inv._id)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-600 transition hover:border-indigo-200 hover:bg-indigo-100 hover:text-indigo-700"
+                        >
+                          <Eye size={15} />
+                          View
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -260,10 +305,7 @@ export default function InvoicesPage() {
             {/* Mobile Cards */}
             <div className="divide-y divide-slate-100 md:hidden">
               {filteredInvoices.map((inv) => (
-                <div
-                  key={inv._id}
-                  className="p-4 transition-colors hover:bg-slate-50"
-                >
+                <div key={inv._id} className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
@@ -292,6 +334,7 @@ export default function InvoicesPage() {
 
                       <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-600">
                         <CalendarDays size={13} />
+
                         {inv.date}
                       </div>
                     </div>
@@ -309,25 +352,36 @@ export default function InvoicesPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-400">
-                      Total amount
-                    </span>
+                  <div className="mt-4 flex items-end justify-between gap-4">
+                    <div>
+                      <span className="text-xs font-medium text-slate-400">
+                        Total amount
+                      </span>
 
-                    <div className="flex items-center text-lg font-bold text-slate-900">
-                      <IndianRupee size={16} />
+                      <div className="mt-1 flex items-center text-lg font-bold text-slate-900">
+                        <IndianRupee size={16} />
 
-                      {Number(inv.total || 0).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                        {Number(inv.total || 0).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => viewInvoice(inv._id)}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition hover:bg-indigo-700"
+                    >
+                      View Invoice
+                      <ChevronRight size={15} />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Footer Count */}
+            {/* Footer */}
             <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-3">
               <p className="text-xs text-slate-500">
                 Showing{" "}

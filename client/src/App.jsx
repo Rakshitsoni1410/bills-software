@@ -1,3 +1,4 @@
+
 import {
   useEffect,
   useState,
@@ -31,6 +32,7 @@ import BillingPage from "./pages/BillingPage";
 import CustomersPage from "./pages/CustomersPage";
 import KhataPage from "./pages/KhataPage";
 import InvoicesPage from "./pages/InvoicesPage";
+import InvoiceDetailsPage from "./pages/InvoiceDetailsPage";
 import SettingsPage from "./pages/SettingsPage";
 
 function RootRedirect() {
@@ -100,13 +102,10 @@ export default function App() {
           style: {
             background:
               "#ffffff",
-
             color:
               "#0f172a",
-
             border:
               "1px solid #e2e8f0",
-
             borderRadius:
               "16px",
           },
@@ -115,7 +114,6 @@ export default function App() {
             iconTheme: {
               primary:
                 "#14b8a6",
-
               secondary:
                 "#ffffff",
             },
@@ -125,7 +123,6 @@ export default function App() {
             iconTheme: {
               primary:
                 "#dc2626",
-
               secondary:
                 "#ffffff",
             },
@@ -196,6 +193,15 @@ export default function App() {
           element={
             <AuthGuard>
               <InvoicesPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/invoices/:id"
+          element={
+            <AuthGuard>
+              <InvoiceDetailsPage />
             </AuthGuard>
           }
         />
