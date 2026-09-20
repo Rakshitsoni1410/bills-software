@@ -22,67 +22,292 @@ router.use(requireAuth);
 function roundMoney(value) {
   return (
     Math.round(
-      Number(value || 0) *
-        100,
+      Number(value || 0) * 100,
     ) / 100
   );
 }
 
-function calcTotals(items) {
-  let subtotal = 0;
+const DISCOUNT_TYPES = [
+  "none",
+  "percent",
+  "fixed",
+];
+
+function normalizeDiscountType(value) {
+  return DISCOUNT_TYPES.includes(value)
+    ? value
+    : "none";
+}
+
+function calculateDiscountAmount(
+  baseAmount,
+  type,
+  rawValue,
+) {
+  const base = Math.max(
+    0,
+    Number(baseAmount) || 0,
+  );
+
+  const discountType =
+    normalizeDiscountType(type);
+
+  const value = Math.max(
+    0,
+    Number(rawValue) || 0,
+  );
+
+  if (discountType === "percent") {
+    return roundMoney(
+      (base * Math.min(value, 100)) /
+        100,
+    );
+  }
+
+  if (discountType === "fixed") {
+    return roundMoney(
+      Math.min(value, base),
+    );
+  }
+
+  return 0;
+}
+
+function calcTotals(
+  items,
+  adjustments = {},
+) {
+  let grossSubtotal = 0;
+  let itemDiscountTotal = 0;
+  let preInvoiceDiscountSubtotal = 0;
+
+  const calculatedItems = items.map(
+    (item) => {
+      const qty = Math.max(
+        0,
+        Number(item.qty) || 0,
+      );
+
+      const rate = Math.max(
+        0,
+        Number(item.rate) || 0,
+      );
+
+      const gst = Math.max(
+        0,
+        Number(item.gst) || 0,
+      );
+
+      const gross = roundMoney(
+        qty * rate,
+      );
+
+      const discountType =
+        normalizeDiscountType(
+          item.discountType,
+        );
+
+      const rawDiscountValue =
+        Math.max(
+          0,
+          Number(
+            item.discountValue,
+          ) || 0,
+        );
+
+      const discountAmount =
+        calculateDiscountAmount(
+          gross,
+          discountType,
+          rawDiscountValue,
+        );
+
+      const discountValue =
+        discountType === "none"
+          ? 0
+          : discountType === "percent"
+            ? Math.min(
+                rawDiscountValue,
+                100,
+              )
+            : Math.min(
+                rawDiscountValue,
+                gross,
+              );
+
+      const taxableBeforeInvoiceDiscount =
+        roundMoney(
+          gross - discountAmount,
+        );
+
+      grossSubtotal += gross;
+
+      itemDiscountTotal +=
+        discountAmount;
+
+      preInvoiceDiscountSubtotal +=
+        taxableBeforeInvoiceDiscount;
+
+      return {
+        desc: String(
+          item.desc || "",
+        ).trim(),
+
+        hsnSac: String(
+          item.hsnSac || "",
+        ).trim(),
+
+        unit:
+          String(
+            item.unit || "Nos",
+          ).trim() || "Nos",
+
+        qty,
+        rate,
+        gst,
+
+        discountType,
+        discountValue,
+        discountAmount,
+
+        taxableBeforeInvoiceDiscount,
+      };
+    },
+  );
+
+  grossSubtotal = roundMoney(
+    grossSubtotal,
+  );
+
+  itemDiscountTotal = roundMoney(
+    itemDiscountTotal,
+  );
+
+  preInvoiceDiscountSubtotal =
+    roundMoney(
+      preInvoiceDiscountSubtotal,
+    );
+
+  const invoiceDiscountType =
+    normalizeDiscountType(
+      adjustments.invoiceDiscountType,
+    );
+
+  const rawInvoiceDiscountValue =
+    Math.max(
+      0,
+      Number(
+        adjustments.invoiceDiscountValue,
+      ) || 0,
+    );
+
+  const invoiceDiscountValue =
+    invoiceDiscountType === "none"
+      ? 0
+      : invoiceDiscountType ===
+          "percent"
+        ? Math.min(
+            rawInvoiceDiscountValue,
+            100,
+          )
+        : Math.min(
+            rawInvoiceDiscountValue,
+            preInvoiceDiscountSubtotal,
+          );
+
+  const invoiceDiscountAmount =
+    calculateDiscountAmount(
+      preInvoiceDiscountSubtotal,
+      invoiceDiscountType,
+      invoiceDiscountValue,
+    );
+
+  const subtotal = roundMoney(
+    preInvoiceDiscountSubtotal -
+      invoiceDiscountAmount,
+  );
+
+  const taxableRatio =
+    preInvoiceDiscountSubtotal > 0
+      ? subtotal /
+        preInvoiceDiscountSubtotal
+      : 0;
+
   let cgst = 0;
   let sgst = 0;
 
-  items.forEach((item) => {
-    const qty =
-      Number(item.qty) || 0;
+  calculatedItems.forEach(
+    (item) => {
+      const adjustedTaxable =
+        item.taxableBeforeInvoiceDiscount *
+        taxableRatio;
 
-    const rate =
-      Number(item.rate) || 0;
+      cgst +=
+        (adjustedTaxable *
+          item.gst) /
+        200;
 
-    const gst =
-      Number(item.gst) || 0;
+      sgst +=
+        (adjustedTaxable *
+          item.gst) /
+        200;
+    },
+  );
 
-    const base =
-      qty * rate;
+  cgst = roundMoney(cgst);
+  sgst = roundMoney(sgst);
 
-    subtotal += base;
+  const extraChargeName = String(
+    adjustments.extraChargeName ||
+      "",
+  ).trim();
 
-    cgst +=
-      (base * gst) / 200;
-
-    sgst +=
-      (base * gst) / 200;
-  });
-
-  subtotal =
-    roundMoney(subtotal);
-
-  cgst =
-    roundMoney(cgst);
-
-  sgst =
-    roundMoney(sgst);
-
-  const total =
+  const extraChargeAmount =
     roundMoney(
-      subtotal +
-        cgst +
-        sgst,
+      Math.max(
+        0,
+        Number(
+          adjustments.extraChargeAmount,
+        ) || 0,
+      ),
     );
 
+  const total = roundMoney(
+    subtotal +
+      cgst +
+      sgst +
+      extraChargeAmount,
+  );
+
   return {
+    items: calculatedItems.map(
+      ({
+        taxableBeforeInvoiceDiscount,
+        ...item
+      }) => item,
+    ),
+
+    grossSubtotal,
+    itemDiscountTotal,
+
+    invoiceDiscountType,
+    invoiceDiscountValue,
+    invoiceDiscountAmount,
+
     subtotal,
+
     cgst,
     sgst,
     igst: 0,
+
+    extraChargeName,
+    extraChargeAmount,
+
     total,
   };
 }
 
-function slugifyBusinessName(
-  name,
-) {
+function slugifyBusinessName(name) {
   const cleaned = (
     name || "BUSINESS"
   )
@@ -92,17 +317,13 @@ function slugifyBusinessName(
       "",
     );
 
-  return (
-    cleaned ||
-    "BUSINESS"
-  );
+  return cleaned || "BUSINESS";
 }
 
 function todayKey() {
   const d = new Date();
 
-  const yyyy =
-    d.getFullYear();
+  const yyyy = d.getFullYear();
 
   const mm = String(
     d.getMonth() + 1,
@@ -125,8 +346,7 @@ async function generateInvoiceNo(
   userId,
   businessName,
 ) {
-  const dateKey =
-    todayKey();
+  const dateKey = todayKey();
 
   const counterKey =
     `${userId}:${dateKey}`;
@@ -136,23 +356,20 @@ async function generateInvoiceNo(
       {
         key: counterKey,
       },
-
       {
         $inc: {
           seq: 1,
         },
       },
-
       {
         upsert: true,
         new: true,
       },
     );
 
-  const seqStr =
-    String(
-      counter.seq,
-    ).padStart(3, "0");
+  const seqStr = String(
+    counter.seq,
+  ).padStart(3, "0");
 
   const slug =
     slugifyBusinessName(
@@ -182,9 +399,7 @@ function randomDigits(length) {
   return value;
 }
 
-function getPaymentPrefix(
-  method,
-) {
+function getPaymentPrefix(method) {
   switch (method) {
     case "upi":
       return "UPI";
@@ -231,61 +446,50 @@ function generateSandboxReference(
   };
 }
 
-// Old invoices existed before amountPaid / balanceDue.
-// We infer sensible values without requiring a DB migration.
 function getEffectiveAmountPaid(
   invoice,
 ) {
   if (
-    invoice.amountPaid !==
-      null &&
-    invoice.amountPaid !==
-      undefined
+    invoice.amountPaid !== null &&
+    invoice.amountPaid !== undefined
   ) {
     return roundMoney(
       invoice.amountPaid,
     );
   }
 
-  // Legacy paid invoice:
-  // treat full total as already paid.
+  // Old fully-paid invoices
   if (
-    invoice.status ===
-    "paid"
+    invoice.status === "paid"
   ) {
     return roundMoney(
       invoice.total,
     );
   }
 
-  // Legacy udhaar / partial invoice:
-  // no historical payment amount was stored.
   return 0;
 }
 
 function getPaymentSummary(
   invoice,
 ) {
-  const total =
+  const total = roundMoney(
+    invoice.total,
+  );
+
+  const amountPaid = Math.min(
+    total,
+    getEffectiveAmountPaid(
+      invoice,
+    ),
+  );
+
+  const balanceDue = Math.max(
+    0,
     roundMoney(
-      invoice.total,
-    );
-
-  const amountPaid =
-    Math.min(
-      total,
-      getEffectiveAmountPaid(
-        invoice,
-      ),
-    );
-
-  const balanceDue =
-    Math.max(
-      0,
-      roundMoney(
-        total - amountPaid,
-      ),
-    );
+      total - amountPaid,
+    ),
+  );
 
   return {
     amountPaid,
@@ -301,9 +505,7 @@ function deriveStatus(
     roundMoney(total);
 
   const safePaid =
-    roundMoney(
-      amountPaid,
-    );
+    roundMoney(amountPaid);
 
   if (
     safeTotal <= 0 ||
@@ -367,8 +569,6 @@ async function syncInvoiceKhata(
       type: "udhaar",
     });
 
-  // Fully paid:
-  // remove invoice-linked outstanding balance.
   if (balanceDue <= 0) {
     if (existing) {
       await Khata.deleteOne({
@@ -379,11 +579,9 @@ async function syncInvoiceKhata(
     return;
   }
 
-  // Outstanding balance remains.
   if (existing) {
     existing.customerId =
-      invoice.customerId ||
-      null;
+      invoice.customerId || null;
 
     existing.customerName =
       invoice.customerName;
@@ -407,8 +605,7 @@ async function syncInvoiceKhata(
       invoice.userId,
 
     customerId:
-      invoice.customerId ||
-      null,
+      invoice.customerId || null,
 
     customerName:
       invoice.customerName,
@@ -431,7 +628,7 @@ async function syncInvoiceKhata(
 }
 
 // ─────────────────────────────────────────────
-// CUSTOMER HELPER
+// CUSTOMER
 // ─────────────────────────────────────────────
 
 async function resolveCustomer(
@@ -464,9 +661,7 @@ async function resolveCustomer(
   const existing =
     await Customer.findOne({
       userId,
-
-      name:
-        customerName,
+      name: customerName,
     });
 
   if (existing) {
@@ -481,23 +676,20 @@ async function resolveCustomer(
         customerName,
 
       phone:
-        body.customerPhone ||
-        "",
+        body.customerPhone || "",
 
       gstin:
-        body.customerGstin ||
-        "",
+        body.customerGstin || "",
 
       address:
-        body.customerAddress ||
-        "",
+        body.customerAddress || "",
     });
 
   return created._id;
 }
 
 // ─────────────────────────────────────────────
-// GET ALL INVOICES
+// GET ALL
 // ─────────────────────────────────────────────
 
 router.get(
@@ -549,7 +741,7 @@ router.get(
 );
 
 // ─────────────────────────────────────────────
-// GET ONE INVOICE
+// GET ONE
 // ─────────────────────────────────────────────
 
 router.get(
@@ -595,14 +787,15 @@ router.get(
 );
 
 // ─────────────────────────────────────────────
-// CREATE INVOICE
+// CREATE
 // ─────────────────────────────────────────────
 
 router.post(
   "/",
   async (req, res) => {
     try {
-      const body = req.body;
+      const body =
+        req.body;
 
       if (
         !Array.isArray(
@@ -649,6 +842,7 @@ router.post(
       const totals =
         calcTotals(
           validItems,
+          body,
         );
 
       const user =
@@ -681,13 +875,6 @@ router.post(
           ? body.status
           : "paid";
 
-      // Preserve current app behavior:
-      // a newly-created "paid" invoice is treated as fully paid.
-      // Udhaar begins fully outstanding.
-      //
-      // Partial invoices created by the old form do not contain
-      // an exact paid amount, so they begin with 0 tracked here
-      // until payments are recorded through Step 4 UI.
       let amountPaid = 0;
 
       if (
@@ -715,16 +902,13 @@ router.post(
             body.customerName.trim(),
 
           customerPhone:
-            body.customerPhone ||
-            "",
+            body.customerPhone || "",
 
           customerGstin:
-            body.customerGstin ||
-            "",
+            body.customerGstin || "",
 
           customerAddress:
-            body.customerAddress ||
-            "",
+            body.customerAddress || "",
 
           invoiceNo,
 
@@ -733,24 +917,19 @@ router.post(
             "Tax Invoice",
 
           date:
-            body.date,
+            body.date ||
+            todayIso(),
 
           dueDate:
-            body.dueDate ||
-            "",
+            body.dueDate || "",
 
           placeOfSupply:
-            body.placeOfSupply ||
-            "",
-
-          items:
-            validItems,
+            body.placeOfSupply || "",
 
           ...totals,
 
           notes:
-            body.notes ||
-            "",
+            body.notes || "",
 
           status:
             requestedStatus,
@@ -762,7 +941,6 @@ router.post(
           payments: [],
         });
 
-      // Outstanding balance goes into Khata.
       if (
         requestedStatus !==
         "paid"
@@ -837,16 +1015,15 @@ router.post(
           });
       }
 
-      const allowedMethods =
-        [
-          "upi",
-          "card",
-          "bank_transfer",
-          "net_banking",
-          "cash",
-          "cheque",
-          "other",
-        ];
+      const allowedMethods = [
+        "upi",
+        "card",
+        "bank_transfer",
+        "net_banking",
+        "cash",
+        "cheque",
+        "other",
+      ];
 
       const method =
         allowedMethods.includes(
@@ -855,12 +1032,11 @@ router.post(
           ? req.body.method
           : "other";
 
-      const allowedStatuses =
-        [
-          "success",
-          "pending",
-          "failed",
-        ];
+      const allowedStatuses = [
+        "success",
+        "pending",
+        "failed",
+      ];
 
       const paymentStatus =
         allowedStatuses.includes(
@@ -915,7 +1091,7 @@ router.post(
           method,
         );
 
-      const payment = {
+      invoice.payments.push({
         amount,
 
         method,
@@ -928,20 +1104,17 @@ router.post(
           paymentStatus,
 
         paymentDate:
-          req.body
-            .paymentDate ||
+          req.body.paymentDate ||
           todayIso(),
 
         note:
           String(
-            req.body.note ||
-              "",
+            req.body.note || "",
           ).trim(),
 
         bankName:
           String(
-            req.body
-              .bankName ||
+            req.body.bankName ||
               "",
           ).trim(),
 
@@ -954,22 +1127,17 @@ router.post(
 
         maskedCard:
           String(
-            req.body
-              .maskedCard ||
+            req.body.maskedCard ||
               "",
           ).trim(),
 
         mode:
           "sandbox",
 
-        isDemo: true,
-      };
+        isDemo:
+          true,
+      });
 
-      invoice.payments.push(
-        payment,
-      );
-
-      // Only successful sandbox payments affect balance.
       if (
         paymentStatus ===
         "success"
@@ -1001,8 +1169,6 @@ router.post(
             invoice.amountPaid,
           );
       } else {
-        // Preserve existing payment totals for
-        // pending / failed simulations.
         invoice.amountPaid =
           currentPaid;
 
@@ -1023,8 +1189,8 @@ router.post(
 
       const savedPayment =
         invoice.payments[
-          invoice.payments
-            .length - 1
+          invoice.payments.length -
+            1
         ];
 
       res
@@ -1047,7 +1213,8 @@ router.post(
               invoice,
             ),
 
-          sandbox: true,
+          sandbox:
+            true,
         });
     } catch (err) {
       console.error(
@@ -1064,14 +1231,15 @@ router.post(
 );
 
 // ─────────────────────────────────────────────
-// EDIT INVOICE
+// EDIT
 // ─────────────────────────────────────────────
 
 router.put(
   "/:id",
   async (req, res) => {
     try {
-      const body = req.body;
+      const body =
+        req.body;
 
       const invoice =
         await Invoice.findOne({
@@ -1141,6 +1309,7 @@ router.put(
       const totals =
         calcTotals(
           validItems,
+          body,
         );
 
       const customerId =
@@ -1156,16 +1325,13 @@ router.put(
         body.customerName.trim();
 
       invoice.customerPhone =
-        body.customerPhone ||
-        "";
+        body.customerPhone || "";
 
       invoice.customerGstin =
-        body.customerGstin ||
-        "";
+        body.customerGstin || "";
 
       invoice.customerAddress =
-        body.customerAddress ||
-        "";
+        body.customerAddress || "";
 
       invoice.docType =
         body.docType ||
@@ -1176,37 +1342,28 @@ router.put(
         invoice.date;
 
       invoice.dueDate =
-        body.dueDate ||
-        "";
+        body.dueDate || "";
 
       invoice.placeOfSupply =
-        body.placeOfSupply ||
-        "";
+        body.placeOfSupply || "";
 
       invoice.items =
-        validItems.map(
-          (item) => ({
-            desc:
-              String(
-                item.desc,
-              ).trim(),
+        totals.items;
 
-            qty:
-              Number(
-                item.qty,
-              ) || 0,
+      invoice.grossSubtotal =
+        totals.grossSubtotal;
 
-            rate:
-              Number(
-                item.rate,
-              ) || 0,
+      invoice.itemDiscountTotal =
+        totals.itemDiscountTotal;
 
-            gst:
-              Number(
-                item.gst,
-              ) || 0,
-          }),
-        );
+      invoice.invoiceDiscountType =
+        totals.invoiceDiscountType;
+
+      invoice.invoiceDiscountValue =
+        totals.invoiceDiscountValue;
+
+      invoice.invoiceDiscountAmount =
+        totals.invoiceDiscountAmount;
 
       invoice.subtotal =
         totals.subtotal;
@@ -1220,13 +1377,19 @@ router.put(
       invoice.igst =
         totals.igst;
 
+      invoice.extraChargeName =
+        totals.extraChargeName;
+
+      invoice.extraChargeAmount =
+        totals.extraChargeAmount;
+
       invoice.total =
         totals.total;
 
       invoice.notes =
         body.notes || "";
 
-      // Existing tracked payments survive invoice edits.
+      // Keep already-recorded payments
       invoice.amountPaid =
         Math.min(
           totals.total,
@@ -1278,14 +1441,14 @@ router.put(
 );
 
 // ─────────────────────────────────────────────
-// DELETE INVOICE
+// DELETE
 // ─────────────────────────────────────────────
 
 router.delete(
   "/:id",
   async (req, res) => {
     try {
-      const result =
+      const invoice =
         await Invoice.findOneAndDelete(
           {
             _id:
@@ -1296,7 +1459,7 @@ router.delete(
           },
         );
 
-      if (!result) {
+      if (!invoice) {
         return res
           .status(404)
           .json({
@@ -1304,6 +1467,16 @@ router.delete(
               "Invoice not found",
           });
       }
+
+      // Remove only Khata rows that belong
+      // directly to this invoice.
+      await Khata.deleteMany({
+        userId:
+          req.user.userId,
+
+        relatedInvoiceId:
+          invoice._id,
+      });
 
       res.json({
         success: true,
