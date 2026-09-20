@@ -1,7 +1,18 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import {
+  useState,
+} from "react";
+
+import {
+  Link,
+  useLocation,
+} from "react-router-dom";
+
+import {
+  useAuth,
+} from "../context/AuthContext";
+
 import InstallButton from "./InstallButton";
+
 import {
   LayoutDashboard,
   FilePlus2,
@@ -12,132 +23,262 @@ import {
   X,
   LogOut,
   Building2,
+  Settings,
 } from "lucide-react";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/billing", label: "New Bill", icon: FilePlus2 },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/khata", label: "Khata", icon: Wallet },
-  { href: "/invoices", label: "Invoices", icon: FileText },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/billing",
+    label: "New Bill",
+    icon: FilePlus2,
+  },
+  {
+    href: "/customers",
+    label: "Customers",
+    icon: Users,
+  },
+  {
+    href: "/khata",
+    label: "Khata",
+    icon: Wallet,
+  },
+  {
+    href: "/invoices",
+    label: "Invoices",
+    icon: FileText,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    icon: Settings,
+  },
 ];
 
 export default function Navbar() {
-  const { pathname } = useLocation();
-  const { user, logout } = useAuth();
-  const [open, setOpen] = useState(false);
+  const {
+    pathname,
+  } = useLocation();
+
+  const {
+    user,
+    logout,
+  } = useAuth();
+
+  const [
+    open,
+    setOpen,
+  ] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm no-print">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
+    <nav className="no-print sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg">
-              <Building2 size={22} />
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-3"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
+              <Building2
+                size={22}
+              />
             </div>
+
             <div>
-              <h1 className="font-bold text-lg text-slate-800">
+              <h1 className="text-lg font-bold text-slate-800">
                 Bills Software
               </h1>
-              <p className="text-xs text-slate-500">GST Billing System</p>
+
+              <p className="text-xs text-slate-500">
+                GST Billing System
+              </p>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-2">
-            {links.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200
-                    ${
-                      pathname === link.href
-                        ? "bg-indigo-600 text-white shadow-md"
+          {/* Desktop navigation */}
+          <div className="hidden items-center gap-1 xl:flex">
+            {links.map(
+              (link) => {
+                const Icon =
+                  link.icon;
+
+                const active =
+                  pathname ===
+                  link.href;
+
+                return (
+                  <Link
+                    key={
+                      link.href
+                    }
+                    to={link.href}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
                         : "text-slate-600 hover:bg-slate-100 hover:text-indigo-600"
                     }`}
-                >
-                  <Icon size={18} />
-                  {link.label}
-                </Link>
-              );
-            })}
+                  >
+                    <Icon
+                      size={17}
+                    />
+
+                    {link.label}
+                  </Link>
+                );
+              },
+            )}
           </div>
 
-          {/* Desktop Right */}
-          <div className="hidden lg:flex items-center gap-3">
-            {/* ✅ Install button — desktop */}
+          {/* Desktop right */}
+          <div className="hidden items-center gap-3 lg:flex">
             <InstallButton />
 
-            <div className="text-right">
-              <p className="text-sm font-semibold text-slate-700">
-                {user?.businessName}
+            <div className="hidden text-right xl:block">
+              <p className="max-w-[150px] truncate text-sm font-semibold text-slate-700">
+                {
+                  user?.businessName
+                }
               </p>
-              <p className="text-xs text-slate-500">Business Account</p>
+
+              <p className="text-xs text-slate-500">
+                Business Account
+              </p>
             </div>
 
-            <div className="h-11 w-11 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-              {user?.businessName?.charAt(0).toUpperCase()}
-            </div>
+            <Link
+              to="/settings"
+              title="Business settings"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700 transition hover:bg-indigo-200"
+            >
+              {user?.businessName
+                ?.charAt(0)
+                .toUpperCase() ||
+                "B"}
+            </Link>
 
             <button
-              onClick={logout}
-              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-red-600 font-medium transition hover:bg-red-100"
+              type="button"
+              onClick={() =>
+                logout()
+              }
+              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
             >
-              <LogOut size={18} />
-              Logout
+              <LogOut
+                size={17}
+              />
+
+              <span className="hidden xl:inline">
+                Logout
+              </span>
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile */}
           <button
-            onClick={() => setOpen(!open)}
-            className="lg:hidden rounded-lg p-2 hover:bg-slate-100"
+            type="button"
+            onClick={() =>
+              setOpen(
+                (value) =>
+                  !value,
+              )
+            }
+            className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
+            aria-label="Toggle navigation"
           >
-            {open ? <X size={24} /> : <Menu size={24} />}
+            {open ? (
+              <X size={24} />
+            ) : (
+              <Menu size={24} />
+            )}
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile menu */}
         {open && (
-          <div className="lg:hidden border-t border-slate-200 py-4 space-y-2">
-            <div className="px-3 pb-3">
-              <p className="font-semibold text-slate-700">
-                {user?.businessName}
-              </p>
-              <p className="text-xs text-slate-500">Business Account</p>
-            </div>
+          <div className="space-y-2 border-t border-slate-200 py-4 lg:hidden">
+            <Link
+              to="/settings"
+              onClick={() =>
+                setOpen(false)
+              }
+              className="mb-3 flex items-center gap-3 rounded-2xl bg-slate-50 p-3"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 font-bold text-indigo-700">
+                {user?.businessName
+                  ?.charAt(0)
+                  .toUpperCase() ||
+                  "B"}
+              </div>
 
-            {links.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 transition
-            ${
-              pathname === link.href
-                ? "bg-indigo-600 text-white"
-                : "hover:bg-slate-100 text-slate-700"
-            }`}
-                >
-                  <Icon size={20} />
-                  {link.label}
-                </Link>
-              );
-            })}
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-slate-700">
+                  {
+                    user?.businessName
+                  }
+                </p>
 
-            {/* ✅ THIS must be here — outside map, before logout */}
-            <InstallButton fullWidth />
+                <p className="text-xs text-slate-500">
+                  Business Account
+                </p>
+              </div>
+            </Link>
+
+            {links.map(
+              (link) => {
+                const Icon =
+                  link.icon;
+
+                const active =
+                  pathname ===
+                  link.href;
+
+                return (
+                  <Link
+                    key={
+                      link.href
+                    }
+                    to={link.href}
+                    onClick={() =>
+                      setOpen(
+                        false,
+                      )
+                    }
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${
+                      active
+                        ? "bg-indigo-600 text-white"
+                        : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Icon
+                      size={20}
+                    />
+
+                    {link.label}
+                  </Link>
+                );
+              },
+            )}
+
+            <InstallButton
+              fullWidth
+            />
 
             <button
-              onClick={logout}
+              type="button"
+              onClick={() =>
+                logout()
+              }
               className="mt-2 flex w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-600"
             >
-              <LogOut size={20} />
+              <LogOut
+                size={20}
+              />
+
               Logout
             </button>
           </div>

@@ -1,9 +1,26 @@
-import { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import { useAuth } from "./context/AuthContext";
-import { setLogoutHandler } from "./api/client"; // ✅ import
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
+import {
+  Toaster,
+} from "react-hot-toast";
+
+import {
+  useAuth,
+} from "./context/AuthContext";
+
+import {
+  setLogoutHandler,
+} from "./api/client";
+
 import AuthGuard from "./components/AuthGuard";
 import SplashScreen from "./components/SplashScreen";
 
@@ -14,37 +31,59 @@ import BillingPage from "./pages/BillingPage";
 import CustomersPage from "./pages/CustomersPage";
 import KhataPage from "./pages/KhataPage";
 import InvoicesPage from "./pages/InvoicesPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function RootRedirect() {
-  const { user, loading } = useAuth();
+  const {
+    user,
+    loading,
+  } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
+      <div className="flex min-h-screen items-center justify-center text-sm text-gray-400">
         Loading...
       </div>
     );
   }
 
-  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+  return (
+    <Navigate
+      to={
+        user
+          ? "/dashboard"
+          : "/login"
+      }
+      replace
+    />
+  );
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
-  const { logout } = useAuth(); // ✅ get logout from context
+  const [
+    showSplash,
+    setShowSplash,
+  ] = useState(true);
 
-  // ✅ Wire api client → AuthContext logout
-  // Now any 401 from any API call anywhere in the app
-  // will automatically call logout() with the error message
+  const {
+    logout,
+  } = useAuth();
+
   useEffect(() => {
-    setLogoutHandler((message) => logout(message));
+    setLogoutHandler(
+      (message) =>
+        logout(message),
+    );
   }, [logout]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 5000);
-    return () => clearTimeout(timer);
+    const timer =
+      setTimeout(() => {
+        setShowSplash(false);
+      }, 5000);
+
+    return () =>
+      clearTimeout(timer);
   }, []);
 
   if (showSplash) {
@@ -57,33 +96,128 @@ export default function App() {
         position="top-right"
         toastOptions={{
           duration: 3000,
+
           style: {
-            background: "#ffffff",
-            color: "#0f172a",
-            border: "1px solid #e2e8f0",
-            borderRadius: "16px",
+            background:
+              "#ffffff",
+
+            color:
+              "#0f172a",
+
+            border:
+              "1px solid #e2e8f0",
+
+            borderRadius:
+              "16px",
           },
+
           success: {
-            iconTheme: { primary: "#14b8a6", secondary: "#ffffff" },
+            iconTheme: {
+              primary:
+                "#14b8a6",
+
+              secondary:
+                "#ffffff",
+            },
           },
+
           error: {
-            iconTheme: { primary: "#dc2626", secondary: "#ffffff" },
+            iconTheme: {
+              primary:
+                "#dc2626",
+
+              secondary:
+                "#ffffff",
+            },
           },
         }}
       />
 
       <Routes>
-        <Route path="/"        element={<RootRedirect />} />
-        <Route path="/login"   element={<LoginPage />} />
-        <Route path="/signup"  element={<SignupPage />} />
+        <Route
+          path="/"
+          element={
+            <RootRedirect />
+          }
+        />
 
-        <Route path="/dashboard" element={<AuthGuard><DashboardPage /></AuthGuard>} />
-        <Route path="/billing"   element={<AuthGuard><BillingPage /></AuthGuard>} />
-        <Route path="/customers" element={<AuthGuard><CustomersPage /></AuthGuard>} />
-        <Route path="/khata"     element={<AuthGuard><KhataPage /></AuthGuard>} />
-        <Route path="/invoices"  element={<AuthGuard><InvoicesPage /></AuthGuard>} />
+        <Route
+          path="/login"
+          element={
+            <LoginPage />
+          }
+        />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/signup"
+          element={
+            <SignupPage />
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <AuthGuard>
+              <DashboardPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/billing"
+          element={
+            <AuthGuard>
+              <BillingPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/customers"
+          element={
+            <AuthGuard>
+              <CustomersPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/khata"
+          element={
+            <AuthGuard>
+              <KhataPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/invoices"
+          element={
+            <AuthGuard>
+              <InvoicesPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <AuthGuard>
+              <SettingsPage />
+            </AuthGuard>
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
       </Routes>
     </>
   );
