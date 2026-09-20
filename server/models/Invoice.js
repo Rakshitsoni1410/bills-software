@@ -8,6 +8,18 @@ const ItemSchema = new mongoose.Schema(
       trim: true,
     },
 
+    hsnSac: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    unit: {
+      type: String,
+      trim: true,
+      default: "Nos",
+    },
+
     qty: {
       type: Number,
       required: true,
@@ -26,6 +38,24 @@ const ItemSchema = new mongoose.Schema(
       type: Number,
       required: true,
       default: 18,
+    },
+
+    discountType: {
+      type: String,
+      enum: ["none", "percent", "fixed"],
+      default: "none",
+    },
+
+    discountValue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {
@@ -47,7 +77,6 @@ const PaymentSchema = new mongoose.Schema(
 
     method: {
       type: String,
-
       enum: [
         "upi",
         "card",
@@ -57,17 +86,14 @@ const PaymentSchema = new mongoose.Schema(
         "cheque",
         "other",
       ],
-
       required: true,
     },
 
-    // Internal sandbox transaction reference
     transactionId: {
       type: String,
       trim: true,
     },
 
-    // UTR / bank-style reference
     reference: {
       type: String,
       trim: true,
@@ -75,13 +101,7 @@ const PaymentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-
-      enum: [
-        "success",
-        "pending",
-        "failed",
-      ],
-
+      enum: ["success", "pending", "failed"],
       default: "success",
     },
 
@@ -96,7 +116,6 @@ const PaymentSchema = new mongoose.Schema(
       default: "",
     },
 
-    // Optional display information
     bankName: {
       type: String,
       trim: true,
@@ -115,16 +134,9 @@ const PaymentSchema = new mongoose.Schema(
       default: "",
     },
 
-    // IMPORTANT:
-    // Gateway payments are simulated.
     mode: {
       type: String,
-
-      enum: [
-        "sandbox",
-        "manual",
-      ],
-
+      enum: ["sandbox", "manual"],
       default: "sandbox",
     },
 
@@ -141,18 +153,13 @@ const PaymentSchema = new mongoose.Schema(
 const InvoiceSchema = new mongoose.Schema(
   {
     userId: {
-      type:
-        mongoose.Schema.Types.ObjectId,
-
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-
       required: true,
     },
 
     customerId: {
-      type:
-        mongoose.Schema.Types.ObjectId,
-
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
     },
 
@@ -172,13 +179,11 @@ const InvoiceSchema = new mongoose.Schema(
 
     docType: {
       type: String,
-
       enum: [
         "Tax Invoice",
         "Quotation",
         "Proforma Invoice",
       ],
-
       default: "Tax Invoice",
     },
 
@@ -189,17 +194,50 @@ const InvoiceSchema = new mongoose.Schema(
 
     dueDate: String,
 
-    placeOfSupply:
-      String,
+    placeOfSupply: String,
 
     items: {
       type: [ItemSchema],
       default: [],
     },
 
+    // Before any discounts
+    grossSubtotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Total item-level discount
+    itemDiscountTotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    invoiceDiscountType: {
+      type: String,
+      enum: ["none", "percent", "fixed"],
+      default: "none",
+    },
+
+    invoiceDiscountValue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    invoiceDiscountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Taxable subtotal after discounts
     subtotal: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     cgst: {
@@ -217,6 +255,18 @@ const InvoiceSchema = new mongoose.Schema(
       default: 0,
     },
 
+    extraChargeName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    extraChargeAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     total: {
       type: Number,
       default: 0,
@@ -226,13 +276,7 @@ const InvoiceSchema = new mongoose.Schema(
 
     status: {
       type: String,
-
-      enum: [
-        "paid",
-        "udhaar",
-        "partial",
-      ],
-
+      enum: ["paid", "udhaar", "partial"],
       default: "paid",
     },
 
@@ -240,7 +284,6 @@ const InvoiceSchema = new mongoose.Schema(
     // PAYMENT TRACKING
     // ───────────────────────────────────────
 
-    // null keeps old invoices backward-compatible.
     amountPaid: {
       type: Number,
       default: null,
@@ -273,8 +316,7 @@ InvoiceSchema.index(
   },
 );
 
-module.exports =
-  mongoose.model(
-    "Invoice",
-    InvoiceSchema,
-  );
+module.exports = mongoose.model(
+  "Invoice",
+  InvoiceSchema,
+);
