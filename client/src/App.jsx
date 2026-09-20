@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import { useAuth } from "./context/AuthContext";
 import { setLogoutHandler } from "./api/client";
 
+import Navbar from "./components/Navbar";
 import SplashScreen from "./components/SplashScreen";
 
 import LoginPage from "./pages/LoginPage";
@@ -34,24 +31,17 @@ function RootRedirect() {
     );
   }
 
-  return (
-    <Navigate
-      to={user ? "/dashboard" : "/login"}
-      replace
-    />
-  );
+  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] =
-    useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   const { logout } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
-    setLogoutHandler((message) =>
-      logout(message),
-    );
+    setLogoutHandler((message) => logout(message));
   }, [logout]);
 
   useEffect(() => {
@@ -66,6 +56,9 @@ export default function App() {
     return <SplashScreen />;
   }
 
+  const hideNavbar =
+    location.pathname === "/login" || location.pathname === "/signup";
+
   return (
     <>
       <Toaster
@@ -76,8 +69,7 @@ export default function App() {
           style: {
             background: "#ffffff",
             color: "#0f172a",
-            border:
-              "1px solid #e2e8f0",
+            border: "1px solid #e2e8f0",
             borderRadius: "16px",
           },
 
@@ -97,77 +89,41 @@ export default function App() {
         }}
       />
 
-      <Routes>
-        <Route
-          path="/"
-          element={<RootRedirect />}
-        />
+      {!hideNavbar && <Navbar />}
 
-        <Route
-          path="/login"
-          element={<LoginPage />}
-        />
+      <main
+        className={
+          hideNavbar ? "" : "mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8"
+        }
+      >
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
 
-        <Route
-          path="/signup"
-          element={<SignupPage />}
-        />
+          <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          path="/dashboard"
-          element={<DashboardPage />}
-        />
+          <Route path="/signup" element={<SignupPage />} />
 
-        <Route
-          path="/billing"
-          element={<BillingPage />}
-        />
+          <Route path="/dashboard" element={<DashboardPage />} />
 
-        <Route
-          path="/customers"
-          element={<CustomersPage />}
-        />
+          <Route path="/billing" element={<BillingPage />} />
 
-        <Route
-          path="/customers/:id"
-          element={<CustomerDetailsPage />}
-        />
+          <Route path="/customers" element={<CustomersPage />} />
 
-        <Route
-          path="/khata"
-          element={<KhataPage />}
-        />
+          <Route path="/customers/:id" element={<CustomerDetailsPage />} />
 
-        <Route
-          path="/invoices"
-          element={<InvoicesPage />}
-        />
+          <Route path="/khata" element={<KhataPage />} />
 
-        <Route
-          path="/invoices/:id"
-          element={<InvoiceDetailsPage />}
-        />
+          <Route path="/invoices" element={<InvoicesPage />} />
 
-        <Route
-          path="/invoices/:id/edit"
-          element={<EditInvoicePage />}
-        />
+          <Route path="/invoices/:id" element={<InvoiceDetailsPage />} />
 
-        <Route
-          path="/settings"
-          element={<SettingsPage />}
-        />
+          <Route path="/invoices/:id/edit" element={<EditInvoicePage />} />
 
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
-        />
-      </Routes>
+          <Route path="/settings" element={<SettingsPage />} />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </>
   );
 }

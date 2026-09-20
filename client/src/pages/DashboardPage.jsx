@@ -15,11 +15,17 @@ import {
   Loader2,
   TriangleAlert,
 } from "lucide-react";
+import Navbar from "./components/Navbar";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+const location = useLocation();
 
+const hideNavbar =
+  location.pathname === "/login" ||
+  location.pathname === "/signup";
+  {!hideNavbar && <Navbar />}
   useEffect(() => {
     api
       .get("/dashboard")
