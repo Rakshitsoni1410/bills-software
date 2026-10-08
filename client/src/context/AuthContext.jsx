@@ -14,19 +14,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Wrapped in useCallback so it's stable across renders
-  const refreshUser = useCallback(async () => {
-    try {
-      setLoading(true); // ✅ always reset loading before fetch
-      const data = await api.get("/auth/me");
-      setUser(data.user);
-    } catch (err) {
-      setUser(null);
-    } finally {
-      setLoading(false); // ✅ always set false after
-    }
-  }, []);
-
+const refreshUser = useCallback(async () => {
+  try {
+    setLoading(true);
+    const data = await api.get("/auth/me");
+    setUser(data.user);
+    return data.user; // ✅ return user so caller can confirm
+  } catch (err) {
+    setUser(null);
+    return null;
+  } finally {
+    setLoading(false);
+  }
+}, []);
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);

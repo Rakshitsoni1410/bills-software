@@ -25,12 +25,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  // ✅ Lockout state
   const [isLocked, setIsLocked] = useState(false);
   const [lockMessage, setLockMessage] = useState("");
 
-  // Replace just the handleSubmit function
   async function handleSubmit(e) {
     e.preventDefault();
     if (isLocked) return;
@@ -44,11 +41,14 @@ export default function LoginPage() {
         password: form.password,
       });
 
-      // ✅ refreshUser sets user in context, then navigate
-      await refreshUser();
+      // ✅ refreshUser returns user — wait for it to finish
+      const loggedInUser = await refreshUser();
 
-      // ✅ Small wait ensures state is committed before navigation
-      navigate("/dashboard", { replace: true });
+      if (loggedInUser) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        setError("Login failed. Please try again.");
+      }
     } catch (err) {
       const message = err?.message || "Login failed. Please try again.";
       setError(message);
@@ -75,15 +75,11 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-slate-950">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900" />
-
-      {/* Ambient Blobs */}
       <div className="absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-indigo-500/20 blur-3xl" />
       <div className="absolute -bottom-40 -right-32 h-[32rem] w-[32rem] rounded-full bg-cyan-500/20 blur-3xl" />
       <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-3xl" />
 
-      {/* Grid Pattern */}
       <div
         className="absolute inset-0 opacity-[0.05]"
         style={{
@@ -172,10 +168,8 @@ export default function LoginPage() {
 
             {/* Login Card */}
             <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white p-6 shadow-2xl shadow-black/30 sm:p-8">
-              {/* Top Accent */}
               <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400" />
 
-              {/* Heading */}
               <div className="mb-7 text-center">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <Lock size={21} />
@@ -188,7 +182,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {/* ✅ Account Locked Banner */}
+              {/* Account Locked Banner */}
               {isLocked && (
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
                   <Ban size={18} className="mt-0.5 shrink-0 text-red-500" />
@@ -201,7 +195,7 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Error (non-lockout errors) */}
+              {/* Error */}
               {error && !isLocked && (
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
                   <TriangleAlert
@@ -212,9 +206,8 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Login */}
+                {/* Login field */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Email or Mobile Number
@@ -245,7 +238,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Password */}
+                {/* Password field */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <label className="text-sm font-semibold text-slate-700">
@@ -286,7 +279,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* ✅ Login Button — locked state */}
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={loading || isLocked}
@@ -299,17 +292,17 @@ export default function LoginPage() {
                 >
                   {isLocked ? (
                     <>
-                      <Ban size={18} />
-                      Account Locked — Try Later
+                      <Ban size={18} /> Account Locked — Try Later
                     </>
                   ) : loading ? (
                     <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Logging in...
+                      <Loader2 size={18} className="animate-spin" /> Logging
+                      in...
                     </>
                   ) : (
                     <>
-                      Login
+                      {" "}
+                      Login{" "}
                       <ArrowRight
                         size={17}
                         className="transition-transform group-hover:translate-x-1"
@@ -319,7 +312,6 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              {/* Divider */}
               <div className="my-7 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-200" />
                 <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
@@ -328,7 +320,6 @@ export default function LoginPage() {
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
 
-              {/* Signup */}
               <Link
                 to="/signup"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
@@ -337,14 +328,12 @@ export default function LoginPage() {
                 <ArrowRight size={16} />
               </Link>
 
-              {/* Security */}
               <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
                 <ShieldCheck size={14} />
                 Secure business login
               </div>
             </div>
 
-            {/* Footer */}
             <div className="mt-6 text-center">
               <p className="text-xs text-slate-500">
                 GST billing, khata and customers — all in one place.

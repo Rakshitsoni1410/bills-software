@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "./Navbar";
@@ -7,15 +7,25 @@ export default function AuthGuard({ children }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // ✅ Only redirect AFTER loading is done and user is confirmed null
-    if (!loading && !user) {
-      navigate("/login", { replace: true }); // ✅ replace prevents back button loop
-    }
-  }, [loading, user, navigate]);
+  // ✅ Extra buffer — wait one tick before deciding to redirect
+  const [ready, setReady] = useState(false);
 
-  // ✅ Show spinner while loading (app start OR after login refreshUser)
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+      // Small delay so user state is committed before redirect decision
+      const timer = setTimeout(() => setReady(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (ready && !user) {
+      navigate("/login", { replace: true });
+    }
+  }, [ready, user, navigate]);
+
+  // Show spinner while loading OR while waiting for ready
+  if (loading || !ready) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center">
@@ -45,7 +55,6 @@ export default function AuthGuard({ children }) {
     );
   }
 
-  // ✅ Don't render children if user is null (redirect is in progress)
   if (!user) return null;
 
   return (
