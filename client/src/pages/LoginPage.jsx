@@ -22,18 +22,17 @@ export default function LoginPage() {
   const { refreshUser } = useAuth();
 
   const [form, setForm] = useState({ login: "", password: "" });
-  const [error, setError]               = useState("");
-  const [loading, setLoading]           = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // ✅ Lockout state
-  const [isLocked, setIsLocked]         = useState(false);
-  const [lockMessage, setLockMessage]   = useState("");
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockMessage, setLockMessage] = useState("");
 
+  // Replace just the handleSubmit function
   async function handleSubmit(e) {
     e.preventDefault();
-
-    // ✅ Block submit if locked
     if (isLocked) return;
 
     setError("");
@@ -41,18 +40,19 @@ export default function LoginPage() {
 
     try {
       await api.post("/auth/login", {
-        login:    form.login,
+        login: form.login,
         password: form.password,
       });
 
+      // ✅ refreshUser sets user in context, then navigate
       await refreshUser();
-      navigate("/dashboard");
 
+      // ✅ Small wait ensures state is committed before navigation
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const message = err?.message || "Login failed. Please try again.";
       setError(message);
 
-      // ✅ Lock the form if account is locked or too many attempts
       if (
         message.toLowerCase().includes("locked") ||
         message.toLowerCase().includes("too many")
@@ -95,7 +95,6 @@ export default function LoginPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid w-full items-center gap-12 lg:grid-cols-2">
-
           {/* Left Side */}
           <div className="hidden lg:block">
             <div className="flex items-center gap-3">
@@ -131,7 +130,9 @@ export default function LoginPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-300">
                     <ShieldCheck size={20} />
                   </div>
-                  <h3 className="mt-4 text-sm font-semibold text-white">Secure Access</h3>
+                  <h3 className="mt-4 text-sm font-semibold text-white">
+                    Secure Access
+                  </h3>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     Your business workspace stays protected and private.
                   </p>
@@ -141,7 +142,9 @@ export default function LoginPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
                     <ReceiptIndianRupee size={20} />
                   </div>
-                  <h3 className="mt-4 text-sm font-semibold text-white">GST Billing</h3>
+                  <h3 className="mt-4 text-sm font-semibold text-white">
+                    GST Billing
+                  </h3>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     Create professional invoices and manage your billing.
                   </p>
@@ -156,7 +159,6 @@ export default function LoginPage() {
 
           {/* Login Area */}
           <div className="mx-auto w-full max-w-md">
-
             {/* Mobile Branding */}
             <div className="mb-7 flex items-center justify-center gap-3 lg:hidden">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 text-white shadow-lg">
@@ -170,7 +172,6 @@ export default function LoginPage() {
 
             {/* Login Card */}
             <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white p-6 shadow-2xl shadow-black/30 sm:p-8">
-
               {/* Top Accent */}
               <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400" />
 
@@ -203,14 +204,16 @@ export default function LoginPage() {
               {/* Error (non-lockout errors) */}
               {error && !isLocked && (
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  <TriangleAlert size={18} className="mt-0.5 shrink-0 text-red-500" />
+                  <TriangleAlert
+                    size={18}
+                    className="mt-0.5 shrink-0 text-red-500"
+                  />
                   <span>{error}</span>
                 </div>
               )}
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
-
                 {/* Login */}
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -218,9 +221,15 @@ export default function LoginPage() {
                   </label>
                   <div className="relative">
                     {form.login && /^\d*$/.test(form.login) ? (
-                      <Smartphone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Smartphone
+                        size={18}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
                     ) : (
-                      <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <Mail
+                        size={18}
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
                     )}
                     <input
                       type="text"
@@ -244,7 +253,10 @@ export default function LoginPage() {
                     </label>
                   </div>
                   <div className="relative">
-                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock
+                      size={18}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
@@ -254,7 +266,10 @@ export default function LoginPage() {
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-12 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
                       value={form.password}
                       onChange={(e) =>
-                        setForm((current) => ({ ...current, password: e.target.value }))
+                        setForm((current) => ({
+                          ...current,
+                          password: e.target.value,
+                        }))
                       }
                     />
                     <button
@@ -262,7 +277,9 @@ export default function LoginPage() {
                       onClick={() => setShowPassword((current) => !current)}
                       disabled={isLocked}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -274,9 +291,10 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading || isLocked}
                   className={`group flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0
-                    ${isLocked
-                      ? "bg-red-400 shadow-red-300/20 cursor-not-allowed"
-                      : "bg-gradient-to-r from-indigo-600 to-indigo-700 shadow-indigo-500/20 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-indigo-800 hover:shadow-indigo-500/30"
+                    ${
+                      isLocked
+                        ? "bg-red-400 shadow-red-300/20 cursor-not-allowed"
+                        : "bg-gradient-to-r from-indigo-600 to-indigo-700 shadow-indigo-500/20 hover:-translate-y-0.5 hover:from-indigo-700 hover:to-indigo-800 hover:shadow-indigo-500/30"
                     }`}
                 >
                   {isLocked ? (
@@ -292,7 +310,10 @@ export default function LoginPage() {
                   ) : (
                     <>
                       Login
-                      <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+                      <ArrowRight
+                        size={17}
+                        className="transition-transform group-hover:translate-x-1"
+                      />
                     </>
                   )}
                 </button>
